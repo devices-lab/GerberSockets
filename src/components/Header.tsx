@@ -61,7 +61,7 @@ function Topbar() {
             <Tooltip title="GitHub">
               <IconButton
                 component="a"
-                href="https://github.com/mac-aron/create-gerbersockets"
+                href="https://github.com/mac-aron/generate-GerberSockets"
                 target="_blank"
                 rel="noopener noreferrer"
                 color="inherit"

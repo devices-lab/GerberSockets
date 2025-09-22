@@ -14,8 +14,7 @@ function AppContent() {
           flex: 1,
           display: "flex",
           flexDirection: "column",
-          overflow: "hidden",
-          userSelect: "none", // Disable text selection globally
+          // overflow: "hidden", // Prevented scrolling on mobile
         }}
       >
         <Main />
