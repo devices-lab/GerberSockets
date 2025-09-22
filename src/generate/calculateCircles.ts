@@ -4,6 +4,35 @@ export type Circle = {
   diameter: string; // e.g., "0.00999" or "0.01071"
 };
 
+/*       
+Apart from the identifier circle, each circle encodes one ASCII character
+in its diameter, using the following scheme:
+
+    0.  │circle│ASCII│
+        │order │code │
+        │[01-99]│[32-127]│
+                             
+                                            
+                   ASCII character [32-127] 
+                   │   with leading zero    
+    leading zero   │                        
+         │  ┌──┬──┬▼──┐                     
+         └──►0.│##│###◄──┐                  
+            └──┴─▲┴───┘  │                  
+                 │    trailing zero and one 
+                 │                          
+     circle order [01-99]                   
+                                                         
+Example:
+encodeCirclesWithIdCharLabels("GND") =>
+[
+  { index: 0, label: 'identifier', diameter: '0.00999' },
+  { index: 1, label: 'G', diameter: '0.01071' },
+  { index: 2, label: 'N', diameter: '0.02078' },
+  { index: 3, label: 'D', diameter: '0.03068' },
+]      
+*/
+
 export function convertToCircles(input: string): Circle[] {
   const n = input.length;
   if (n < 1 || n > 99) {
@@ -40,14 +69,4 @@ export function convertToCircles(input: string): Circle[] {
   return circles;
 }
 
-// let output = encodeCirclesWithIdCharLabels("GND");
-// console.log(output);
 
-// Example:
-// encodeCirclesWithIdCharLabels("GND") =>
-// [
-//   { index: 0, label: 'identifier', diameter: '0.00999' },
-//   { index: 1, label: 'G', diameter: '0.01071' },
-//   { index: 2, label: 'N', diameter: '0.02078' },
-//   { index: 3, label: 'D', diameter: '0.03068' },
-// ]
