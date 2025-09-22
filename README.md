@@ -27,7 +27,7 @@ Learn more about the encoding method in the [How ASCII GerberSockets Work](#how-
   - GerberSockets/GerberSockets.pretty/.kicad_mod
   - GerberSockets/GerberSockets.kicad_sym
 
-## How ASCII GerberSockets Work
+## How ASCII GerberSockets work
 
 ASCII GerberSockets represent each net name using a series of circles, where each circle’s diameter encodes both its position and the ASCII value of the character:
 
