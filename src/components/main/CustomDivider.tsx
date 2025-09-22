@@ -14,6 +14,7 @@ const CustomDivider: React.FC<CustomDividerProps> = ({ name }) => {
           justifyContent: "space-between",
           alignItems: "center",
           mb: 2,
+          mx: "max",
         }}
       >
         <Typography variant="h6">{name}</Typography>
