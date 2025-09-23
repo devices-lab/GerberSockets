@@ -38,6 +38,7 @@ const ASCII_REGEX = /^[\x00-\x7F]*$/;
 const POPULAR_GROUPS: Record<string, string[]> = {
   I2C: ["SDA", "SCL"],
   SPI: ["MOSI", "MISO", "SCK", "CS"],
+  SWD: ["SWDIO~^", "SWCLK", "RESET"],
   UART: ["TX", "RX"],
   Jacdac: ["JD_PWR", "JD_DATA", "GND"],
 };
