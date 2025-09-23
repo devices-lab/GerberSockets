@@ -22,6 +22,7 @@ export function generateKiCadSymbols(netNames: string[]): string {
             (on_board yes)
             (property "Reference" "${REFERENCE_DESIGNATOR}"
                 (at 0 3.048 0)
+                (do_not_autoplace)
                 (effects
                     (font
                         (size 1.27 1.27)
