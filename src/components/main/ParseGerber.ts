@@ -16,8 +16,8 @@ const loadGerberParserLibrary = (): Promise<any> => {
     }
 
     const script = document.createElement('script');
-    // TODO: Get a local copy of gerber-parser and host it ourselves
-    script.src = 'https://unpkg.com/gerber-parser@^4.0.0/dist/gerber-parser.min.js';
+    // script.src = 'https://unpkg.com/gerber-parser@^4.0.0/dist/gerber-parser.min.js';
+    script.src = 'gerber-parser.min.js'; // Local copy
     script.async = true;
 
     script.onload = () => {
