@@ -2,10 +2,16 @@ import type { Gerber, GerberSet } from './ParseGerber';
 import type { GerberSocket } from './ParseSockets';
 import { parseSockets } from './ParseSockets';
 
+// Drawing parameters
+const canvasDPI = 2;
+let scale: number;
+let offsetX: number;
+let offsetY: number;
+
 const initCanvas = (canvas: HTMLCanvasElement) => {
   const rect = canvas.getBoundingClientRect();
-  canvas.width = rect.width;
-  canvas.height = rect.height;
+  canvas.width = rect.width * canvasDPI; // Times two for a higher DPI
+  canvas.height = rect.height * canvasDPI;
   canvas.style.width = `${rect.width}px`;
   canvas.style.height = `${rect.height}px`;
 
@@ -16,13 +22,11 @@ const initCanvas = (canvas: HTMLCanvasElement) => {
 type Coord = { x: number; y: number };
 type Tool = { shape: string; params: number[] };
 
-// Basic transform: scale and center
-const scale = 20; //mm to pixels
-let offsetX: number;
-let offsetY: number;
 
 // Draw each Gerber layer
 // NOTE: Mostly AI generated function, haven't looked at it properly yet
+// BUG: This is quite a primitive rendering, doesn't handle arcs, polygons, fills, etc,
+// but should be enough to understand the socket placements relative to the PCB.
 const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber = 0) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) {
@@ -85,20 +89,43 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   const px = offsetX + socket.x * scale;
   const py = offsetY - socket.y * scale;
 
-  const radius = 5;
+  const radius = 10;
   ctx.beginPath();
   ctx.arc(px, py, radius, 0, 2 * Math.PI);
   ctx.fillStyle = 'black';
   ctx.fill();
 
-  ctx.font = '16px Arial';
+  ctx.font = '32px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(socket.ascii, px + 10, py);
+  ctx.fillText(socket.ascii, px + 20, py);
 }
 
 export const drawGerberCanvas = (gerberSet: GerberSet, canvas: HTMLCanvasElement) => {
   console.log('Drawing Gerber Layers:', gerberSet.gerbers);
+
+
+  // Set scale depending on gerber size
+  // Find max and min coordinates
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  for (const gerber of gerberSet.gerbers) {
+    for (const item of gerber.graphicObjects) {
+      if (item.type === 'op') {
+        const { x, y } = item.coord;
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  const gerberWidth = maxX - minX;
+  const gerberHeight = maxY - minY;
+  const canvasRect = canvas.getBoundingClientRect();
+  const scaleX = canvasRect.width / gerberWidth;
+  const scaleY = canvasRect.height / gerberHeight;
+  scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
+  scale *= canvasDPI; 
 
   initCanvas(canvas);
 

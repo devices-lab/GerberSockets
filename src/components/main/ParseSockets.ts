@@ -1,4 +1,4 @@
-import type { Gerber, GerberSet } from './ParseGerber';
+import type { GerberSet } from './ParseGerber';
 
 export interface GerberSocket {
   ascii: string;
@@ -40,18 +40,18 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
 
   const sockets: GerberSocket[] = [];
 
-  console.log('Gerber socket layer graphicObjects', socketGerberLayer.graphicObjects);
+  console.log(`graphicObjects of layer '${socketGerberLayer.filename}'`, socketGerberLayer.graphicObjects);
 
   // Example JSON structure of a gerber socket in graphicObjects:
   // Tool creation example:
     // {
     //     "type": "tool",
     //     "line": 14,
-    //     "code": "12",
+    //     "code": "12", <-- The tool number
     //     "tool": {
     //         "shape": "circle",
     //         "params": [
-    //             0.01083
+    //             0.01083 <-- Defines the diameter of this tool
     //         ],
     //         "hole": []
     //     }
@@ -59,15 +59,15 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     //
   // Tool use example (I think?):
     // {
-    //     "type": "set",
+    //     "type": "set", <-- Sets the current tool
     //     "line": 102,
     //     "prop": "tool",
-    //     "value": "12"
+    //     "value": "12" <-- The tool number being used
     // },
     // {
     //     "type": "op",
     //     "line": 103,
-    //     "op": "move",
+    //     "op": "move", <-- Move to position without drawing
     //     "coord": {
     //         "x": -6.5,
     //         "y": 8.25
@@ -76,9 +76,9 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     // {
     //     "type": "op",
     //     "line": 104,
-    //     "op": "int",
+    //     "op": "int", <-- Interpolate (draw) to position
     //     "coord": {
-    //         "x": -6.5,
+    //         "x": -6.5, <-- Same position = zero-length line
     //         "y": 8.25
     //     }
     // },
@@ -95,7 +95,8 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     //             pos = (obj.x1, obj.y1)
     //             circles[pos].append(float(d))
 
-  // NOTE:  hmm, seems we have a different format to the backend... no apeture or diameter here?
+  // NOTE:  We have a different format to the backend (gerbonara). No apeture or diameter here, 
+  // we just have the raw gerber commands.
 
   // Find zero-length lines as "circles"
   const circles: Record<string, { x: number; y: number; diameters: number[] }> = {};
@@ -146,7 +147,6 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
 
   console.log('Circles found:', circles);
 
-  // For now just say anything in the circles is a socket (NOTE: also AI generated)
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
@@ -161,10 +161,24 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
         }
       }
     }
+    // Only add socket if we decoded some ASCII
     if (ascii) {
       sockets.push({ ascii, x: circle.x, y: circle.y });
+    } else {
+      // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
+      // don't show up, for now we'll just add a '?' placeholder showing the socket if no ASCII is
+      // decoded. This is likely to lead to false positives for sockets though.
+      sockets.push({ ascii: '?', x: circle.x, y: circle.y });
     }
   }
+
+  // Sort sockets from top-left to bottom-right
+  sockets.sort((a, b) => {
+    if (a.y !== b.y) return b.y - a.y;
+    return a.x - b.x;
+  });
+
+  console.log('Parsed sockets:', sockets);
   
   return sockets;
 }
