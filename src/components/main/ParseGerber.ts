@@ -1,5 +1,8 @@
 import JSZip from 'jszip';
 import { drawGerberCanvas } from './DrawGerber';
+// import { createGerberSetImage } from './DrawGerber';
+import { parseSockets } from './ParseSockets';
+import type { GerberSocket } from './ParseSockets';
 
 let gerberParserReady: Promise<any> | null = null;
 
@@ -113,7 +116,12 @@ const isValidZipFile = (fileName: string) => {
 }
 
 // Turn uploaded file(s) (zip/gbr) into parsed gerber data
-export const handleGerberUpload = async (file: File, canvas: HTMLCanvasElement) => {
+// TODO: Break up into smaller functions
+export const handleGerberUpload = async (
+  file: File, 
+  canvas: HTMLCanvasElement, 
+  onSocketsParsed: (sockets: GerberSocket[]) => void
+) => {
   const parsedGerbers: Gerber[] = [];
 
   const gerberSet: GerberSet = {
@@ -150,6 +158,7 @@ export const handleGerberUpload = async (file: File, canvas: HTMLCanvasElement) 
     }
   } else {
       alert('Error: The uploaded file was not recognized as a gerber file / zip.');
+      return;
   }
 
   gerberSet.gerbers = parsedGerbers;
@@ -163,5 +172,9 @@ export const handleGerberUpload = async (file: File, canvas: HTMLCanvasElement) 
     return;
   }
 
+  const sockets: GerberSocket[] = parseSockets(gerberSet);
+  onSocketsParsed(sockets);
+
   drawGerberCanvas(gerberSet, canvas);
+  // createGerberSetImage(gerberSet, sockets, canvas);
 };
