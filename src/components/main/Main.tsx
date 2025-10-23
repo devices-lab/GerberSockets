@@ -32,6 +32,7 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import AddIcon from "@mui/icons-material/Add";
 import CustomDivider from "./CustomDivider";
+import ViewSection from "./ViewSection";
 
 const ASCII_REGEX = /^[\x00-\x7F]*$/;
 
@@ -133,233 +134,249 @@ const Main: React.FC = () => {
     }
   };
 
+  /* Split into two horizontal sections: Generate and View */
   return (
     <Box sx={{ p: 2 }}>
-      <CustomDivider name="Generate ASCII GerberSockets symbols and footprints" />
-      <Box sx={{ maxWidth: 720 }}>
-        <Stack spacing={2}>
-          {/* EDA selection */}
-          <FormControl>
-            <FormLabel>Select EDA tool</FormLabel>
-            <RadioGroup
-              row
-              value={eda}
-              onChange={(e) => setEda(e.target.value as EDA)}
-            >
-              <FormControlLabel
-                value="KiCad"
-                control={<Radio />}
-                label="KiCad"
-              />
-              <FormControlLabel
-                value="Altium"
-                control={<Radio />}
-                label="Altium (not implemented)"
-                disabled
-              />
-            </RadioGroup>
-          </FormControl>
-
-          {/* Net names input and list */}
-          <Stack spacing={1}>
-            <FormLabel>Add net names</FormLabel>
-
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={1}
-              sx={{ my: 0 }}
-            >
-              <TextField
-                fullWidth
-                label="Net name"
-                value={newNet}
-                onChange={(e) => {
-                  setNewNet(e.target.value);
-                  if (netError) setNetError("");
-                }}
-                error={Boolean(netError)}
-                helperText={
-                  netError || "ASCII characters only, max. 99 characters"
-                }
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddNet();
-                  }
-                }}
-              />
-              <Button
-                variant="contained"
-                onClick={handleAddNet}
-                sx={{
-                  height: { xs: "auto", sm: "56px" },
-                }}
-              >
-                Add
-              </Button>
-            </Stack>
-
-            {/* Popular groups */}
-            <Stack spacing={0.5}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                sx={{
-                  py: 1,
-                }}
-              >
-                {Object.entries(POPULAR_GROUPS).map(([key, _]) => {
-                  const handleClick = () =>
-                    addGroup(key as keyof typeof POPULAR_GROUPS);
-                  return (
-                    <Button
-                      variant="outlined"
-                      size="small"
-                      onClick={handleClick}
-                      endIcon={<AddIcon fontSize="small" />}
-                      sx={{
-                        textTransform: "none",
-                        borderRadius: 1,
-                        px: 1.25,
-                        py: 0.5,
-                        lineHeight: 1.5,
-                        height: 32,
-                      }}
-                    >
-                      {key}
-                    </Button>
-                  );
-                })}
-              </Stack>
-            </Stack>
-
-            {/* Render each net name as a small card with delete */}
-            <Stack spacing={0.5} sx={{ pt: 1 }}>
-              {netNames.map((name) => (
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1,
-                  }}
+      <Stack direction="row" spacing={6}>
+        {/* Generate Section. TODO: Move to GenerateSection component */}
+        <Box flex={1}>
+          <CustomDivider name="Generate ASCII GerberSockets symbols and footprints" />
+          <Box sx={{ maxWidth: 720 }}>
+            <Stack spacing={2}>
+              {/* EDA selection */}
+              <FormControl>
+                <FormLabel>Select EDA tool</FormLabel>
+                <RadioGroup
+                  row
+                  value={eda}
+                  onChange={(e) => setEda(e.target.value as EDA)}
                 >
-                  <Chip
-                    label={name}
-                    sx={{
-                      fontSize: "1rem",
-                      height: 32,
-                      px: 2,
-                      fontFamily: "monospace",
+                  <FormControlLabel
+                    value="KiCad"
+                    control={<Radio />}
+                    label="KiCad"
+                  />
+                  <FormControlLabel
+                    value="Altium"
+                    control={<Radio />}
+                    label="Altium (not implemented)"
+                    disabled
+                  />
+                </RadioGroup>
+              </FormControl>
+
+              {/* Net names input and list */}
+              <Stack spacing={1}>
+                <FormLabel>Add net names</FormLabel>
+
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
+                  sx={{ my: 0 }}
+                >
+                  <TextField
+                    fullWidth
+                    label="Net name"
+                    value={newNet}
+                    onChange={(e) => {
+                      setNewNet(e.target.value);
+                      if (netError) setNetError("");
+                    }}
+                    error={Boolean(netError)}
+                    helperText={
+                      netError || "ASCII characters only, max. 99 characters"
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddNet();
+                      }
                     }}
                   />
-                  <Tooltip title={`Delete "${name}" socket`} arrow>
-                    <IconButton
-                      aria-label={`delete ${name}`}
-                      onClick={() => handleDeleteNet(name)}
-                      sx={{ color: "error.main" }}
+                  <Button
+                    variant="contained"
+                    onClick={handleAddNet}
+                    sx={{
+                      height: { xs: "auto", sm: "56px" },
+                    }}
+                  >
+                    Add
+                  </Button>
+                </Stack>
+
+                {/* Popular groups */}
+                <Stack spacing={0.5}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={1}
+                    sx={{
+                      py: 1,
+                    }}
+                  >
+                    {Object.entries(POPULAR_GROUPS).map(([key, _]) => {
+                      const handleClick = () =>
+                        addGroup(key as keyof typeof POPULAR_GROUPS);
+                      return (
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={handleClick}
+                          endIcon={<AddIcon fontSize="small" />}
+                          sx={{
+                            textTransform: "none",
+                            borderRadius: 1,
+                            px: 1.25,
+                            py: 0.5,
+                            lineHeight: 1.5,
+                            height: 32,
+                          }}
+                        >
+                          {key}
+                        </Button>
+                      );
+                    })}
+                  </Stack>
+                </Stack>
+
+                {/* Render each net name as a small card with delete */}
+                <Stack spacing={0.5} sx={{ pt: 1 }}>
+                  {netNames.map((name) => (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                      }}
                     >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              ))}
-            </Stack>
-          </Stack>
-
-          {/* Advanced options toggle */}
-          <Stack spacing={1}>
-            <Button
-              variant="text"
-              endIcon={advancedOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              onClick={() => setAdvancedOpen((o) => !o)}
-            >
-              Advanced options
-            </Button>
-
-            <Collapse in={advancedOpen} timeout="auto" unmountOnExit>
-              <Stack spacing={2}>
-                {/* Crosshair Layer */}
-                <FormControl>
-                  <FormLabel>Crosshair layer</FormLabel>
-                  <Select
-                    value={crosshairLayer}
-                    onChange={(e) =>
-                      setCrosshairLayer(e.target.value as CrosshairLayer)
-                    }
-                  >
-                    <MenuItem value="F.Fab">F.Fab</MenuItem>
-                    <MenuItem value="User.Drawing">User.Drawing</MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* Sockets Layer */}
-                <FormControl>
-                  <FormLabel>Sockets layer</FormLabel>
-                  <Select
-                    value={socketsLayer}
-                    onChange={(e) =>
-                      setSocketsLayer(e.target.value as SocketsLayer)
-                    }
-                  >
-                    <MenuItem value="User.1">User.1</MenuItem>
-                    <MenuItem value="GerberSockets">GerberSockets</MenuItem>
-                  </Select>
-                </FormControl>
-
-                {/* Copper Pad Diameter */}
-                <FormControl>
-                  <FormLabel>Copper pad diameter</FormLabel>
-                  <OutlinedInput
-                    type="number"
-                    inputProps={{ step: 0.005, min: 0.05 }}
-                    value={
-                      Number.isNaN(copperPadDiameter) ? "" : copperPadDiameter
-                    }
-                    onChange={(e) =>
-                      setCopperPadDiameter(
-                        e.target.value === "" ? NaN : Number(e.target.value)
-                      )
-                    }
-                    endAdornment={
-                      <InputAdornment position="end">mm</InputAdornment>
-                    }
-                  />
-                </FormControl>
+                      <Chip
+                        label={name}
+                        sx={{
+                          fontSize: "1rem",
+                          height: 32,
+                          px: 2,
+                          fontFamily: "monospace",
+                        }}
+                      />
+                      <Tooltip title={`Delete "${name}" socket`} arrow>
+                        <IconButton
+                          aria-label={`delete ${name}`}
+                          onClick={() => handleDeleteNet(name)}
+                          sx={{ color: "error.main" }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  ))}
+                </Stack>
               </Stack>
-            </Collapse>
-          </Stack>
 
-          {/* Download button */}
-          <Box>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              alignItems={{ xs: "stretch", sm: "center" }}
-            >
-              <Button
-                variant="contained"
-                color="primary"
-                disabled={netNames.length === 0}
-                onClick={handleDownload}
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-              >
-                Download
-              </Button>
-              <Box sx={{ color: "text.secondary" }}>
-                Downloads ZIP file containing EDA library files,&nbsp;
-                <a
-                  href="https://github.com/mac-aron/generate-GerberSockets/blob/main/README.md"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{ color: "inherit", textDecoration: "underline" }}
+              {/* Advanced options toggle */}
+              <Stack spacing={1}>
+                <Button
+                  variant="text"
+                  endIcon={advancedOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                  onClick={() => setAdvancedOpen((o) => !o)}
                 >
-                  read more here
-                </a>
+                  Advanced options
+                </Button>
+
+                <Collapse in={advancedOpen} timeout="auto" unmountOnExit>
+                  <Stack spacing={2}>
+                    {/* Crosshair Layer */}
+                    <FormControl>
+                      <FormLabel>Crosshair layer</FormLabel>
+                      <Select
+                        value={crosshairLayer}
+                        onChange={(e) =>
+                          setCrosshairLayer(e.target.value as CrosshairLayer)
+                        }
+                      >
+                        <MenuItem value="F.Fab">F.Fab</MenuItem>
+                        <MenuItem value="User.Drawing">User.Drawing</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    {/* Sockets Layer */}
+                    <FormControl>
+                      <FormLabel>Sockets layer</FormLabel>
+                      <Select
+                        value={socketsLayer}
+                        onChange={(e) =>
+                          setSocketsLayer(e.target.value as SocketsLayer)
+                        }
+                      >
+                        <MenuItem value="User.1">User.1</MenuItem>
+                        <MenuItem value="GerberSockets">GerberSockets</MenuItem>
+                      </Select>
+                    </FormControl>
+
+                    {/* Copper Pad Diameter */}
+                    <FormControl>
+                      <FormLabel>Copper pad diameter</FormLabel>
+                      <OutlinedInput
+                        type="number"
+                        inputProps={{ step: 0.005, min: 0.05 }}
+                        value={
+                          Number.isNaN(copperPadDiameter) ? "" : copperPadDiameter
+                        }
+                        onChange={(e) =>
+                          setCopperPadDiameter(
+                            e.target.value === "" ? NaN : Number(e.target.value)
+                          )
+                        }
+                        endAdornment={
+                          <InputAdornment position="end">mm</InputAdornment>
+                        }
+                      />
+                    </FormControl>
+                  </Stack>
+                </Collapse>
+              </Stack>
+
+              {/* Download button */}
+              <Box>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={2}
+                  alignItems={{ xs: "stretch", sm: "center" }}
+                >
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    disabled={netNames.length === 0}
+                    onClick={handleDownload}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
+                    Download
+                  </Button>
+                  <Box sx={{ color: "text.secondary" }}>
+                    Downloads ZIP file containing EDA library files,&nbsp;
+                    <a
+                      href="https://github.com/mac-aron/generate-GerberSockets/blob/main/README.md"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ color: "inherit", textDecoration: "underline" }}
+                    >
+                      read more here
+                    </a>
+                  </Box>
+                </Stack>
               </Box>
             </Stack>
           </Box>
-        </Stack>
-      </Box>
+
+          {/* Spacer */}
+          <Box sx={{ height: 32 }} />
+          
+          
+        </Box>
+
+        {/* View Gerber Section */}
+        <Box flex={0.7}>
+          <ViewSection />
+        </Box>
+      </Stack>
     </Box>
   );
 };
