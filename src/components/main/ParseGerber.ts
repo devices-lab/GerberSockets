@@ -1,0 +1,165 @@
+import JSZip from 'jszip';
+import { drawGerberCanvas } from './DrawGerber';
+
+let gerberParserReady: Promise<any> | null = null;
+
+// Dynamically load the gerber-parser script from CDN
+const loadGerberParserLibrary = (): Promise<any> => {
+  if (gerberParserReady) return gerberParserReady;
+
+  gerberParserReady = new Promise((resolve, reject) => {
+    if ((window as any).gerberParser) {
+      resolve((window as any).gerberParser);
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/gerber-parser@^4.0.0/dist/gerber-parser.min.js';
+    script.async = true;
+
+    script.onload = () => {
+      if ((window as any).gerberParser) {
+        resolve((window as any).gerberParser);
+      } else {
+        reject(new Error('gerberParser not found on window'));
+      }
+    };
+
+    script.onerror = () => reject(new Error('Failed to load gerber-parser script'));
+
+    document.body.appendChild(script);
+  });
+
+  return gerberParserReady;
+};
+
+// Return (filename -> text content) mapping for all files (of any type) in the zip
+const zipToFileTexts = async (file: File) => {
+  const zip = new JSZip();
+  const zipContent = await zip.loadAsync(file);
+
+  const textFiles = await Promise.all(
+    Object.values(zipContent.files)
+      .filter((file) => !file.dir)
+      .map(async (file) => {
+        const content = await file.async('text');
+        return {
+          name: file.name,
+          content,
+        };
+      })
+  );
+
+  return textFiles;
+};
+
+export interface Gerber {
+  graphicObjects: any[];
+  filename: string; 
+}
+
+export interface GerberSet {
+  gerbers: Gerber[];
+  zipFilename: string | null;
+}
+
+// Parse a single Gerber file content
+const parseGerberContent = async (content: string, name: string) => {
+  const gerberParser = await loadGerberParserLibrary();
+  const parser = gerberParser();
+
+  const parsedData: any[] = [];
+
+  parser.on('data', (data: any) => {
+    parsedData.push(data);
+  });
+
+  parser.write(content);
+  parser.end();
+
+  return { name, parsedData };
+};
+
+const validGerberExtensions = [
+  '.gbr',       // Generic Gerber file
+  '.zip',       // Compressed archive of multiple Gerber files
+  '.gbl',       // Gerber Bottom Layer
+  '.gtl',       // Gerber Top Layer
+  '.gbs',       // Gerber Bottom Soldermask
+  '.gts',       // Gerber Top Soldermask
+  '.gbo',       // Gerber Bottom Silkscreen (Overlay)
+  '.gto',       // Gerber Top Silkscreen (Overlay)
+  '.gbp',       // Gerber Bottom Paste
+  '.gtp',       // Gerber Top Paste
+  '.gm1',       // Mechanical Layer 1
+  '.gm2',       // Mechanical Layer 2
+  // '.drl',       // Drill file (Excellon format)
+  // '.xln',       // Alternate drill file extension
+  '.gml',       // Gerber Mechanical Layer
+  '.gko',       // Keep-out layer
+  // '.gpi',       // Gerber Plot Information
+  '.gbs',       // Gerber Bottom Soldermask
+  '.gts',       // Gerber Top Soldermask
+];
+
+// TODO: add .gtl, .gbl, .drl, etc.
+const isValidGerberFile = (fileName: string) => {
+  return validGerberExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
+}
+const isValidZipFile = (fileName: string) => {
+  return fileName.toLowerCase().endsWith('.zip');
+}
+
+// Turn uploaded file(s) (zip/gbr) into parsed gerber data
+export const handleGerberUpload = async (file: File, canvas: HTMLCanvasElement) => {
+  const parsedGerbers: Gerber[] = [];
+
+  const gerberSet: GerberSet = {
+    zipFilename: null,
+    gerbers: [],
+  };
+
+  // Zip upload
+  if (isValidZipFile(file.name)) {
+    gerberSet.zipFilename = file.name;
+
+    const files = await zipToFileTexts(file);
+    for (const gbrFile of files) {
+      if (isValidGerberFile(gbrFile.name)) {
+        // The text of a file in the zip
+        const result = await parseGerberContent(gbrFile.content, gbrFile.name);
+        parsedGerbers.push({
+          filename: result.name,
+          graphicObjects: result.parsedData,
+        } as Gerber)
+      }
+    }
+  } else if (isValidGerberFile(file.name)) {
+    // Single Gerber file upload
+
+    if (isValidGerberFile(file.name)) {
+      const content = await file.text();
+      const result = await parseGerberContent(content, file.name);
+
+      parsedGerbers.push({
+        filename: result.name,
+        graphicObjects: result.parsedData,
+      } as Gerber)
+    }
+  } else {
+      alert('Error: The uploaded file was not recognized as a gerber file / zip.');
+  }
+
+  gerberSet.gerbers = parsedGerbers;
+
+  if (gerberSet.gerbers.length === 0) {
+    if (file.name.endsWith('.zip')) {
+      alert('Error: No gerber files were found in the uploaded zip.');
+    } else {
+      alert('Error: The uploaded file was not recognized as a gerber file.');
+    }
+    return;
+  }
+
+  drawGerberCanvas(gerberSet, canvas);
+};

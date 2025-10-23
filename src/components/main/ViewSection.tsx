@@ -1,7 +1,11 @@
 import { Box, Button, Stack } from '@mui/material';
 import CustomDivider from "./CustomDivider";
+import { handleGerberUpload } from './ParseGerber';
+import { useRef } from 'react';
 
 export default function ViewSection() {
+  const gerberCanvasRef = useRef<HTMLCanvasElement | null>(null);
+
   return (
     <Stack spacing={2} sx={{ mb: 4 }}>
       <CustomDivider name="View ASCII GerberSockets" />
@@ -17,14 +21,11 @@ export default function ViewSection() {
             Upload Gerber
             <input
               type="file"
-              accept=".zip,.gbr,.gerber"
+              accept=".zip,.gbr" // TODO: accept any from the validGerberExtensions array
               hidden
               onChange={(e) => {
                 const file = e.target.files?.[0];
-                if (file) {
-                  // Handle file upload logic here
-                  alert(`Uploaded file: ${file.name}`);
-                }
+                if (file) handleGerberUpload(file, gerberCanvasRef.current!);
               }}
             />
           </Button>
@@ -33,7 +34,7 @@ export default function ViewSection() {
 
       <Box>
         <canvas
-          id="gerber-canvas"
+          ref={gerberCanvasRef}
           style={{
             border: '1px solid #ccc',
             width: '100%',
