@@ -1,4 +1,4 @@
-import type { Gerber, GerberSet } from './ParseGerber';
+import type { GerberSet } from './ParseGerber';
 
 export interface GerberSocket {
   ascii: string;
@@ -164,8 +164,19 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     // Only add socket if we decoded some ASCII
     if (ascii) {
       sockets.push({ ascii, x: circle.x, y: circle.y });
+    } else {
+      // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
+      // don't show up, for now we'll just add a '?' placeholder showing the socket if no ASCII is
+      // decoded. This is likely to lead to false positives for sockets though.
+      sockets.push({ ascii: '?', x: circle.x, y: circle.y });
     }
   }
+
+  // Sort sockets from top-left to bottom-right
+  sockets.sort((a, b) => {
+    if (a.y !== b.y) return b.y - a.y;
+    return a.x - b.x;
+  });
 
   console.log('Parsed sockets:', sockets);
   

@@ -25,6 +25,8 @@ type Tool = { shape: string; params: number[] };
 
 // Draw each Gerber layer
 // NOTE: Mostly AI generated function, haven't looked at it properly yet
+// BUG: This is quite a primitive rendering, doesn't handle arcs, polygons, fills, etc,
+// but should be enough to understand the socket placements relative to the PCB.
 const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber = 0) => {
   const ctx = canvas.getContext('2d');
   if (!ctx) {

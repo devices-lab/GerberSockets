@@ -1,6 +1,5 @@
 import JSZip from 'jszip';
 import { drawGerberCanvas } from './DrawGerber';
-// import { createGerberSetImage } from './DrawGerber';
 import { parseSockets } from './ParseSockets';
 import type { GerberSocket } from './ParseSockets';
 
@@ -176,5 +175,4 @@ export const handleGerberUpload = async (
   onSocketsParsed(sockets);
 
   drawGerberCanvas(gerberSet, canvas);
-  // createGerberSetImage(gerberSet, sockets, canvas);
 };

@@ -4,10 +4,11 @@ import { Box, Typography } from '@mui/material';
 
 type FileUploadDropZoneProps = {
   onFileDrop: (file: File) => void;
+  message?: string;
   accept?: string;
 };
 
-export default function FileUploadDropZone({ onFileDrop, accept }: FileUploadDropZoneProps) {
+export default function FileUploadDropZone({ onFileDrop, message, accept }: FileUploadDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -44,9 +45,7 @@ export default function FileUploadDropZone({ onFileDrop, accept }: FileUploadDro
         cursor: 'pointer',
       }}
     >
-      <Typography variant="body1">
-        Click or drag a Gerber or ZIP file here
-      </Typography>
+      <Typography variant="body1">{message || "Click, or drop a file here"}</Typography>
 
       <input
         type="file"

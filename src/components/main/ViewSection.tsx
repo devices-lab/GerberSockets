@@ -25,6 +25,7 @@ export default function ViewSection() {
 
       <FileUploadDropZone
         onFileDrop={handleUpload}
+        message="Click, or drop a Gerber/ZIP file here"
         accept={".zip," + validGerberExtensions.join("")}
       />
 
