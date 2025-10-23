@@ -51,7 +51,7 @@ export default function GenerateSection() {
   const [netError, setNetError] = useState<string>("");
   const [advancedOpen, setAdvancedOpen] = useState<boolean>(false);
   const [crosshairLayer, setCrosshairLayer] = useState<CrosshairLayer>("F.Fab");
-  const [socketsLayer, setSocketsLayer] = useState<SocketsLayer>("User.1");
+  const [socketsLayer, _setSocketsLayer] = useState<SocketsLayer>("User.1"); // NOTE: _setSocketsLayer not used at the moment
   const [copperPadDiameter, setCopperPadDiameter] = useState<number>(0.125);
 
   const handleAddNet = () => {
@@ -80,14 +80,14 @@ export default function GenerateSection() {
     const names = POPULAR_GROUPS[groupKey];
     // Validate against the same constraints used for single adds
     const validNew = names
-    .map((n) => n.trim())
-    .filter(
-      (n) =>
-        n.length >= 1 &&
+      .map((n) => n.trim())
+      .filter(
+        (n) =>
+          n.length >= 1 &&
           n.length <= 99 &&
           ASCII_REGEX.test(n) &&
           !netNames.includes(n)
-    );
+      );
     if (validNew.length === 0) {
       return;
     }
@@ -173,6 +173,7 @@ export default function GenerateSection() {
                 fullWidth
                 label="Net name"
                 value={newNet}
+                sx = {{ maxWidth: 600 }}
                 onChange={(e) => {
                   setNewNet(e.target.value);
                   if (netError) setNetError("");
@@ -292,8 +293,8 @@ export default function GenerateSection() {
                   </Select>
                 </FormControl>
 
-                {/* Sockets Layer */}
-                <FormControl>
+                {/* Sockets Layer - not needed at the moment, will default to User.1 layer */}
+                {/* <FormControl>
                   <FormLabel>Sockets layer</FormLabel>
                   <Select
                     value={socketsLayer}
@@ -304,7 +305,7 @@ export default function GenerateSection() {
                     <MenuItem value="User.1">User.1</MenuItem>
                     <MenuItem value="GerberSockets">GerberSockets</MenuItem>
                   </Select>
-                </FormControl>
+                </FormControl> */}
 
                 {/* Copper Pad Diameter */}
                 <FormControl>
@@ -330,7 +331,7 @@ export default function GenerateSection() {
           </Stack>
 
           {/* Download button */}
-          <Box>
+          <Box sx={{ pt: 2 }}>
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={2}
@@ -361,5 +362,5 @@ export default function GenerateSection() {
         </Stack>
       </Box>
     </>
-  )
+  );
 }
