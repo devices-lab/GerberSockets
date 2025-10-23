@@ -147,29 +147,45 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
 
   console.log('Circles found:', circles);
 
+  let asciiParsingErrors = 0;
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
     let ascii = '';
+    let hasIdentifier = false;
     for (const diameter of circle.diameters) {
       const diameterStr = diameter.toFixed(5); // Ensure consistent decimal places
       const match = diameterStr.match(/^0\.(\d{2})(\d{3})$/);
       if (match) {
+        if (match[1] === '00' && match[2] === '999') {
+          hasIdentifier = true;
+          continue; // Identifier circle, skip
+        }
         const asciiCode = parseInt(match[2], 10);
         if (asciiCode >= 32 && asciiCode <= 126) { // Printable ASCII range
           ascii += String.fromCharCode(asciiCode);
         }
       }
     }
+    
+    // ASCII Socket must have identifier circle
+    if (!hasIdentifier) continue; 
+
     // Only add socket if we decoded some ASCII
     if (ascii) {
       sockets.push({ ascii, x: circle.x, y: circle.y });
     } else {
+      asciiParsingErrors++;
+      console.warn(`ASCII parsing failed for socket at (${circle.x}, ${circle.y}).`);
       // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
-      // don't show up, for now we'll just add a '?' placeholder showing the socket if no ASCII is
-      // decoded. This is likely to lead to false positives for sockets though.
-      sockets.push({ ascii: '?', x: circle.x, y: circle.y });
+      // don't show up, for now we'll just add a placeholder showing the socket if no ASCII is
+      // decoded.
+      sockets.push({ ascii: '', x: circle.x, y: circle.y });
     }
+  }
+
+  if (asciiParsingErrors > 0) {
+    alert(`Warning: ${asciiParsingErrors} Gerber socket(s) could not be ASCII decoded.`);
   }
 
   // Sort sockets from top-left to bottom-right

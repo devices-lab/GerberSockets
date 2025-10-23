@@ -22,7 +22,6 @@ const initCanvas = (canvas: HTMLCanvasElement) => {
 type Coord = { x: number; y: number };
 type Tool = { shape: string; params: number[] };
 
-
 // Draw each Gerber layer
 // NOTE: Mostly AI generated function, haven't looked at it properly yet
 // BUG: This is quite a primitive rendering, doesn't handle arcs, polygons, fills, etc,
@@ -90,14 +89,26 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   const py = offsetY - socket.y * scale;
 
   const radius = 10;
+  // Circle
+  // ctx.beginPath();
+  // ctx.arc(px, py, radius, 0, 2 * Math.PI);
+  // ctx.fillStyle = 'black';
+  // ctx.fill();
+
+  // Diagonal cross
   ctx.beginPath();
-  ctx.arc(px, py, radius, 0, 2 * Math.PI);
-  ctx.fillStyle = 'black';
-  ctx.fill();
+  ctx.moveTo(px - radius, py - radius);
+  ctx.lineTo(px + radius, py + radius);
+  ctx.moveTo(px + radius, py - radius);
+  ctx.lineTo(px - radius, py + radius);
+  ctx.strokeStyle = 'black';
+  ctx.lineWidth = 4;
+  ctx.stroke();
 
   ctx.font = '32px Arial';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'black';
   ctx.fillText(socket.ascii, px + 20, py);
 }
 

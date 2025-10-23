@@ -45,7 +45,7 @@ export default function ViewSection() {
       <Box>
         <Box>
           <Typography variant="h6" sx={{ mb: 1 }}>
-            Gerber Socket Info
+            GerberSocket Info
           </Typography>
 
           {/* Socket info boxes */}
