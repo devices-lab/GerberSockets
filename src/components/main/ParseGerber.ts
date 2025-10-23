@@ -174,5 +174,5 @@ export const handleGerberUpload = async (
   const sockets: GerberSocket[] = parseSockets(gerberSet);
   onSocketsParsed(sockets);
 
-  drawGerberCanvas(gerberSet, canvas);
+  drawGerberCanvas(gerberSet, sockets, canvas);
 };

@@ -112,7 +112,7 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   ctx.fillText(socket.ascii, px + 20, py);
 }
 
-export const drawGerberCanvas = (gerberSet: GerberSet, canvas: HTMLCanvasElement) => {
+export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], canvas: HTMLCanvasElement) => {
   console.log('Drawing Gerber Layers:', gerberSet.gerbers);
 
 
@@ -158,7 +158,6 @@ export const drawGerberCanvas = (gerberSet: GerberSet, canvas: HTMLCanvasElement
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Draw sockets ontop
-  const sockets: GerberSocket[] = parseSockets(gerberSet);
   for (const socket of sockets) {
     drawGerberSocket(socket, canvas);
   }
