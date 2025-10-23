@@ -30,7 +30,7 @@ const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber 
     return;
   }
 
-  const drawColor = 'hsl(' + (layerNumber * 60 % 360) + ', 70%, 50%)';
+  const drawColor = 'hsl(' + (layerNumber * 67 % 360) + ', 70%, 50%)';
 
   const tools: Record<string, Tool> = {};
   let currentTool: Tool | null = null;
@@ -82,16 +82,19 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
     return;
   }
 
-  ctx.fillStyle = 'red';
-  ctx.font = '12px Arial';
+  const px = offsetX + socket.x * scale;
+  const py = offsetY - socket.y * scale;
 
-  for (const coord of socket.coords) {
-    const [x, y] = coord;
-    const px = offsetX + x * scale;
-    const py = offsetY - y * scale;
+  const radius = 5;
+  ctx.beginPath();
+  ctx.arc(px, py, radius, 0, 2 * Math.PI);
+  ctx.fillStyle = 'black';
+  ctx.fill();
 
-    ctx.fillText(socket.ascii, px, py);
-  }
+  ctx.font = '16px Arial';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(socket.ascii, px + 10, py);
 }
 
 export const drawGerberCanvas = (gerberSet: GerberSet, canvas: HTMLCanvasElement) => {
@@ -116,7 +119,7 @@ export const drawGerberCanvas = (gerberSet: GerberSet, canvas: HTMLCanvasElement
   ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw scokets ontop
+  // Draw sockets ontop
   const sockets: GerberSocket[] = parseSockets(gerberSet);
   for (const socket of sockets) {
     drawGerberSocket(socket, canvas);
