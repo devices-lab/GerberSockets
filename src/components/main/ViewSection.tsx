@@ -62,6 +62,9 @@ export default function ViewSection() {
                 <Box key={index} sx={{ p: 1, pr: 3, border: '1px solid #ddd', borderRadius: 1 }}>
                   <Typography variant="subtitle1">{socket.ascii}</Typography>
                   <Typography variant="body2">x: {socket.x}, y: {socket.y}</Typography>
+                  {socket.diameters !== undefined && (
+                    <Typography variant="body2">diameters: [{socket.diameters.join(", ")}]</Typography>
+                  )}
                 </Box>
               ))
             )}

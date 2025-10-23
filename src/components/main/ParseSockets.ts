@@ -4,6 +4,7 @@ export interface GerberSocket {
   ascii: string;
   x: number;
   y: number; 
+  diameters?: number[]; // For showing info on legacy sockets without ASCII
 }
 
 export interface GerberKeepoutZone {
@@ -175,18 +176,18 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
 
     // Only add socket if we decoded some ASCII
     if (ascii) {
-      sockets.push({ ascii, x: circle.x, y: circle.y });
+      sockets.push({ ascii, x: circle.x, y: circle.y } as GerberSocket);
     } else {
       asciiParsingErrors++;
       console.warn(`ASCII parsing failed for socket at (${circle.x}, ${circle.y}).`);
       // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
       // don't show up, for now we'll just add a placeholder showing the socket if no ASCII is
       // decoded.
-      sockets.push({ ascii: '', x: circle.x, y: circle.y });
+      sockets.push({ ascii: '', x: circle.x, y: circle.y } as GerberSocket);
     }
   }
 
-  if (asciiParsingErrors) alert(`Warning: ${asciiParsingErrors} GerberSocket(s) could not be ASCII decoded.`);
+  if (asciiParsingErrors) alert(`Warning: ${asciiParsingErrors} ASCII GerberSocket(s) could not be ASCII decoded.`);
 
   // If no ASCII identifiers found, show all circles as legacy sockets
   if (identifiersFound === 0 && Object.keys(circles).length > 0) {
@@ -196,7 +197,7 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     sockets = [];
     for (const key in circles) {
       const circle = circles[key];
-      sockets.push({ ascii: '', x: circle.x, y: circle.y });
+      sockets.push({ ascii: '', x: circle.x, y: circle.y, diameters: circle.diameters } as GerberSocket);
     }
   }
 
