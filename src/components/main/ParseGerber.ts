@@ -14,6 +14,7 @@ const loadGerberParserLibrary = (): Promise<any> => {
     }
 
     const script = document.createElement('script');
+    // TODO: Get a local copy of gerber-parser and host it ourselves
     script.src = 'https://unpkg.com/gerber-parser@^4.0.0/dist/gerber-parser.min.js';
     script.async = true;
 
@@ -63,7 +64,7 @@ export interface GerberSet {
   zipFilename: string | null;
 }
 
-// Parse a single Gerber file content
+// Parse a single Gerber file's content
 const parseGerberContent = async (content: string, name: string) => {
   const gerberParser = await loadGerberParserLibrary();
   const parser = gerberParser();
@@ -80,9 +81,11 @@ const parseGerberContent = async (content: string, name: string) => {
   return { name, parsedData };
 };
 
-const validGerberExtensions = [
-  '.gbr',       // Generic Gerber file
+
+// Any files that have gerber graphics objects inside
+export const validGerberExtensions = [
   '.zip',       // Compressed archive of multiple Gerber files
+  '.gbr',       // Generic Gerber file
   '.gbl',       // Gerber Bottom Layer
   '.gtl',       // Gerber Top Layer
   '.gbs',       // Gerber Bottom Soldermask
@@ -102,7 +105,6 @@ const validGerberExtensions = [
   '.gts',       // Gerber Top Soldermask
 ];
 
-// TODO: add .gtl, .gbl, .drl, etc.
 const isValidGerberFile = (fileName: string) => {
   return validGerberExtensions.some(ext => fileName.toLowerCase().endsWith(ext));
 }
