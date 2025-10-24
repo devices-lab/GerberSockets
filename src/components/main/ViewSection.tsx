@@ -1,19 +1,23 @@
-import { Box, Stack } from '@mui/material';
+import { Box, Stack } from "@mui/material";
 import CustomDivider from "./CustomDivider";
-import { handleGerberUpload, validGerberExtensions } from './ParseGerber';
-import { useRef, useState } from 'react';
-import FileUploadDropZone from './FileUploadDropZone';
-import type { GerberSocket } from './ParseSockets';
-import { Typography } from '@mui/material';
-import { Alert, AlertTitle } from '@mui/material';
+import { handleGerberUpload, validGerberExtensions } from "./parseGerber";
+import { useRef, useState } from "react";
+import FileUploadDropZone from "./FileUploadDropZone";
+import type { GerberSocket } from "./parseSockets";
+import { Typography } from "@mui/material";
+import { Alert, AlertTitle } from "@mui/material";
 
 export default function ViewSection() {
   const gerberCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
-  const [gerberSocketsInfo, setGerberSocketsInfo] = useState<GerberSocket[]>([]);
+  const [gerberSocketsInfo, setGerberSocketsInfo] = useState<GerberSocket[]>(
+    []
+  );
 
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [statusSeverity, setStatusSeverity] = useState<"error" | "warning" | "info" | "success">("error");
+  const [statusSeverity, setStatusSeverity] = useState<
+    "error" | "warning" | "info" | "success"
+  >("error");
 
   const handleUpload = (file: File | null) => {
     if (file) {
@@ -24,7 +28,8 @@ export default function ViewSection() {
         setStatusSeverity,
         (sockets: GerberSocket[]) => {
           setGerberSocketsInfo(sockets);
-        });
+        }
+      );
     }
   };
 
@@ -42,10 +47,10 @@ export default function ViewSection() {
         <canvas
           ref={gerberCanvasRef}
           style={{
-            border: '1px solid #ccc',
-            width: '100%',
-            height: '100%',
-            backgroundColor: '#f9f9f9',
+            border: "1px solid #ccc",
+            width: "100%",
+            height: "100%",
+            backgroundColor: "#f9f9f9",
           }}
         />
       </Box>
@@ -60,29 +65,46 @@ export default function ViewSection() {
           {/* Error or info message */}
           {statusMessage && (
             <Alert severity={statusSeverity} sx={{ mb: 2 }}>
-              {(statusSeverity === 'error' || statusSeverity === 'warning') &&
-                <AlertTitle>{statusSeverity.charAt(0).toUpperCase() + statusSeverity.slice(1)}</AlertTitle>
-              }
+              {(statusSeverity === "error" || statusSeverity === "warning") && (
+                <AlertTitle>
+                  {statusSeverity.charAt(0).toUpperCase() +
+                    statusSeverity.slice(1)}
+                </AlertTitle>
+              )}
               {statusMessage}
             </Alert>
           )}
 
           {/* Socket info boxes */}
-          <Box sx={{
-            display: 'flex',
-            flexDirection: 'row',
-            flexWrap: 'wrap',
-            gap: 1,
-          }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 1,
+            }}
+          >
             {!gerberSocketsInfo.length ? (
               <Typography variant="body2">No Gerber sockets loaded.</Typography>
             ) : (
               gerberSocketsInfo.map((socket, index) => (
-                <Box key={index} sx={{ p: 1, pr: 3, border: '1px solid #ddd', borderRadius: 1 }}>
+                <Box
+                  key={index}
+                  sx={{
+                    p: 1,
+                    pr: 3,
+                    border: "1px solid #ddd",
+                    borderRadius: 1,
+                  }}
+                >
                   <Typography variant="subtitle1">{socket.ascii}</Typography>
-                  <Typography variant="body2">x: {socket.x}, y: {socket.y}</Typography>
+                  <Typography variant="body2">
+                    x: {socket.x}, y: {socket.y}
+                  </Typography>
                   {socket.diameters !== undefined && (
-                    <Typography variant="body2">diameters: [{socket.diameters.join(", ")}]</Typography>
+                    <Typography variant="body2">
+                      diameters: [{socket.diameters.join(", ")}]
+                    </Typography>
                   )}
                 </Box>
               ))
@@ -91,5 +113,5 @@ export default function ViewSection() {
         </Box>
       </Box>
     </Stack>
-  )
+  );
 }
