@@ -69,6 +69,13 @@ const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber 
         ctx.lineTo(px, py);
         ctx.strokeStyle = drawColor;
         ctx.lineWidth = (currentTool.params?.[0] || 0.2) * scale;
+        if (ctx.lineWidth > canvas.width / 3) {
+          // Too big, skip drawing (probably an error in the parsing)
+          console.warn('Skipping line drawing due to excessive line width:', ctx.lineWidth);
+          lastCoord = { x: px, y: py };
+          continue;
+        }
+        // console.log('Drawing line from:', lastCoord, 'to:', { x: px, y: py }, 'with tool:', currentTool, 'line width:', ctx.lineWidth, 'canvas width:', canvas.width, 'height:', canvas.height);
         ctx.stroke();
         lastCoord = { x: px, y: py };
       }
@@ -76,6 +83,12 @@ const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber 
       if (item.op === 'flash' && currentTool) {
         ctx.beginPath();
         const radius = (currentTool.params?.[0] || 0.2) * scale / 2;
+        if (radius > canvas.width / 3) {
+          // Too big, skip drawing (probably an error in the parsing)
+          console.warn('Skipping flash drawing due to excessive radius:', radius);
+          continue;
+        }
+        // console.log('Flashing at:', px, py, 'with tool:', currentTool, 'radius:', radius, 'canvas width:', canvas.width, 'height:', canvas.height);
         ctx.arc(px, py, radius, 0, 2 * Math.PI);
         ctx.fillStyle = drawColor;
         ctx.fill();
@@ -121,11 +134,20 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
 export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], canvas: HTMLCanvasElement) => {
   console.log('Drawing Gerber Layers:', gerberSet.gerbers);
 
-
-  // Set scale depending on gerber size
-  // Find max and min coordinates
+  // Check if there's an edge cuts layer
+  const edgeCutsLayer = gerberSet.gerbers.find(gerber => 
+    gerber.filename.toLowerCase().includes('edge') && 
+    gerber.filename.toLowerCase().includes('cuts') &&
+    gerber.graphicObjects.length > 4
+  );
+  
+  // Find bounds of all gerber layers
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  let avgX = 0, avgY = 0, pointCount = 0;
   for (const gerber of gerberSet.gerbers) {
+    // If edge cuts layer exists, use only it when calculating bounds
+    if (edgeCutsLayer && gerber !== edgeCutsLayer) continue; 
+
     for (const item of gerber.graphicObjects) {
       if (item.type === 'op') {
         const { x, y } = item.coord;
@@ -133,9 +155,16 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
         if (y < minY) minY = y;
         if (x > maxX) maxX = x;
         if (y > maxY) maxY = y;
+        avgX += x;
+        avgY += y;
+        pointCount++;
       }
     }
   }
+  avgX /= pointCount;
+  avgY /= pointCount;
+  console.log('Gerber bounds:', { minX, minY, maxX, maxY });
+  // Set scale to fit gerber in canvas
   const gerberWidth = maxX - minX;
   const gerberHeight = maxY - minY;
   const canvasRect = canvas.getBoundingClientRect();
@@ -144,7 +173,18 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
   scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
   scale *= canvasDPI; 
 
-  initCanvas(canvas);
+  initCanvas(canvas); // Sets offsetX/Y
+
+  // Convert avg to canvas offset
+  avgX = offsetX - avgX * scale;
+  avgY = offsetY + avgY * scale;
+
+  // If the current offset is very different from the average object coordinate, use the 
+  // average offset since the gerber is probably off-screen
+  if (Math.abs(offsetX - avgX) + Math.abs(offsetY - avgY) > canvas.width / 2) {
+    offsetX = avgX;
+    offsetY = avgY;
+  }
 
   const ctx = canvas.getContext('2d');
   if (!ctx) {
