@@ -181,7 +181,7 @@ export const handleGerberUpload = async (
 
   if (gerberSet.gerbers.length === 0) {
     if (file.name.endsWith(".zip")) {
-      setStatusMessage("No Gerber files were found in the uploaded zi");
+      setStatusMessage("No Gerber files were found in the uploaded zip");
       setStatusSeverity("error");
     } else {
       setStatusMessage(

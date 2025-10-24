@@ -89,7 +89,7 @@ export default function PreviewSection() {
 
           <FileUploadDropZone
             onFileDrop={handleUpload}
-            accept={".zip," + validGerberExtensions.join("")} // Putting .zip first so it's clearer to the user
+            accept={".zip," + validGerberExtensions.filter((ext) => ext !== ".zip").join(",")} // Putting .zip first for clarity
           />
         </Box>
       )}

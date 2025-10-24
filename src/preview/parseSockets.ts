@@ -37,7 +37,7 @@ export const parseSockets = (
   let socketGerberLayer = null;
   for (const gerber of gerberSet.gerbers) {
     if (
-      gerber.filename.endsWith(".gbr") &&
+      gerber.filename.toLowerCase().endsWith(".gbr") &&
       gerber.filename.includes("GerberSockets")
     ) {
       socketGerberLayer = gerber;
