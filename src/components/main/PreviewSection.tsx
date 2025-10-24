@@ -7,7 +7,7 @@ import type { GerberSocket } from "./parseSockets";
 import { Typography } from "@mui/material";
 import { Alert, AlertTitle } from "@mui/material";
 
-export default function ViewSection() {
+export default function PreviewSection() {
   const gerberCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const [gerberSocketsInfo, setGerberSocketsInfo] = useState<GerberSocket[]>(
