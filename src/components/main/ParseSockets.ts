@@ -1,4 +1,5 @@
 import type { GerberSet } from './ParseGerber';
+import type { Dispatch, SetStateAction } from 'react';
 
 export interface GerberSocket {
   ascii: string;
@@ -25,7 +26,11 @@ export interface GerberKeepoutZone {
         is the ASCII code of the character.
       - Only diameters matching the expected format and value ranges are decoded.
 */
-export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
+export const parseSockets = (
+  gerberSet: GerberSet,
+  setStatusMessage: Dispatch<SetStateAction<string | null>>,
+  setStatusSeverity: Dispatch<SetStateAction<"error" | "warning" | "info" | "success">>
+): GerberSocket[] => {
   // Find the GerberSockets layer
   let socketGerberLayer = null;
   for (const gerber of gerberSet.gerbers) {
@@ -35,7 +40,8 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     }
   }
   if (!socketGerberLayer) {
-    alert('Error: No GerberSockets layer found in the uploaded gerber files.');
+    setStatusMessage('No GerberSockets layer found in the uploaded gerber files.');
+    setStatusSeverity('error');
     return [];
   }
 
@@ -114,6 +120,8 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
         if (prevObj.type === 'op' && prevObj.op === 'move') {
           const { x: px, y: py } = prevObj.coord;
           if (x === px && y === py) {
+            console.log(`Zero-length line (circle) found at (${x}, ${y})`);
+            console.log(`Line numbers: move ${prevObj.line}, int ${obj.line}`);
             // Zero-length line found
             // Find the current tool to get diameter
             let toolCode = null;
@@ -134,6 +142,9 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
                     if (!circles[key]) {
                       circles[key] = { x, y, diameters: [] };
                     }
+                    console.log(`  Diameter found: ${diameter}`);
+                    console.log(`  Tool code used: ${toolCode}`);
+                    console.log(`  Tool line number: ${lookbackObj.line}`);
                     circles[key].diameters.push(diameter);
                   }
                   break;
@@ -187,11 +198,15 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     }
   }
 
-  if (asciiParsingErrors) alert(`Warning: ${asciiParsingErrors} ASCII GerberSocket(s) could not be ASCII decoded.`);
+  if (asciiParsingErrors) {
+    setStatusMessage(`${asciiParsingErrors} ASCII GerberSocket(s) failed to have their ASCII decoded.`);
+    setStatusSeverity('warning');
+  }
 
   // If no ASCII identifiers found, show all circles as legacy sockets
   if (identifiersFound === 0 && Object.keys(circles).length > 0) {
-    alert('No ASCII GerberSocket identifiers were found. Displaying all zero-length lines (legacy sockets) instead.');
+    setStatusMessage('No ASCII GerberSocket identifiers were found.\nDisplaying all zero-length lines (legacy sockets) instead.');
+    setStatusSeverity('warning');
 
     // Display all circles as sockets without ASCII
     sockets = [];

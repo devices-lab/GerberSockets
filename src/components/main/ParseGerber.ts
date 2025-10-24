@@ -2,6 +2,8 @@ import JSZip from 'jszip';
 import { drawGerberCanvas } from './DrawGerber';
 import { parseSockets } from './ParseSockets';
 import type { GerberSocket } from './ParseSockets';
+import type { Dispatch, SetStateAction } from 'react';
+import { clearCanvas } from './DrawGerber';
 
 let gerberParserReady: Promise<any> | null = null;
 
@@ -119,6 +121,8 @@ const isValidZipFile = (fileName: string) => {
 export const handleGerberUpload = async (
   file: File, 
   canvas: HTMLCanvasElement, 
+  setStatusMessage: Dispatch<SetStateAction<string | null>>,
+  setStatusSeverity: Dispatch<SetStateAction<"error" | "warning" | "info" | "success">>,
   onSocketsParsed: (sockets: GerberSocket[]) => void
 ) => {
   const parsedGerbers: Gerber[] = [];
@@ -127,6 +131,12 @@ export const handleGerberUpload = async (
     zipFilename: null,
     gerbers: [],
   };
+
+  // Clear previous status
+  setStatusMessage(null);
+  setStatusSeverity('info');
+  onSocketsParsed([]);
+  clearCanvas(canvas);
 
   // Zip upload
   if (isValidZipFile(file.name)) {
@@ -156,7 +166,8 @@ export const handleGerberUpload = async (
       } as Gerber)
     }
   } else {
-      alert('Error: The uploaded file was not recognized as a gerber file / zip.');
+      setStatusMessage('The uploaded file was not recognized as a gerber file / zip.');
+      setStatusSeverity('error');
       return;
   }
 
@@ -164,14 +175,16 @@ export const handleGerberUpload = async (
 
   if (gerberSet.gerbers.length === 0) {
     if (file.name.endsWith('.zip')) {
-      alert('Error: No gerber files were found in the uploaded zip.');
+      setStatusMessage('No gerber files were found in the uploaded zip.');
+      setStatusSeverity('error');
     } else {
-      alert('Error: The uploaded file was not recognized as a gerber file.');
+      setStatusMessage('The uploaded file was not recognized as a gerber file.');
+      setStatusSeverity('error');
     }
     return;
   }
 
-  const sockets: GerberSocket[] = parseSockets(gerberSet);
+  const sockets: GerberSocket[] = parseSockets(gerberSet, setStatusMessage, setStatusSeverity);
   onSocketsParsed(sockets);
 
   drawGerberCanvas(gerberSet, sockets, canvas);

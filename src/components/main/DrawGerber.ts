@@ -1,6 +1,5 @@
 import type { Gerber, GerberSet } from './ParseGerber';
 import type { GerberSocket } from './ParseSockets';
-import { parseSockets } from './ParseSockets';
 
 // Drawing parameters
 const canvasDPI = 2;
@@ -17,6 +16,13 @@ const initCanvas = (canvas: HTMLCanvasElement) => {
 
   offsetX = canvas.width / 2;
   offsetY = canvas.height / 2;
+}
+
+export const clearCanvas = (canvas: HTMLCanvasElement) => {
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
 }
 
 type Coord = { x: number; y: number };
