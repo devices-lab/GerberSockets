@@ -27,9 +27,10 @@ import {
   Collapse,
   Tooltip,
 } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
+import DownloadIcon from "@mui/icons-material/Download";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
+import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
 import CustomDivider from "../CustomDivider";
 
@@ -135,7 +136,7 @@ export default function GenerateSection() {
 
   return (
     <>
-      <CustomDivider name="Generate ASCII GerberSockets symbols and footprints" />
+      <CustomDivider name="Generate GerberSockets symbols and footprints" />
       <Box sx={{ maxWidth: 720 }}>
         <Stack spacing={2}>
           {/* EDA selection */}
@@ -201,42 +202,40 @@ export default function GenerateSection() {
             </Stack>
 
             {/* Popular groups */}
-            <Stack spacing={0.5}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                sx={{
-                  py: 1,
-                }}
-              >
-                {Object.entries(POPULAR_GROUPS).map(([key, _]) => {
-                  const handleClick = () =>
-                    addGroup(key as keyof typeof POPULAR_GROUPS);
-                  return (
-                    <Button
-                      key={key}
-                      variant="outlined"
-                      size="small"
-                      onClick={handleClick}
-                      endIcon={<AddIcon fontSize="small" />}
-                      sx={{
-                        textTransform: "none",
-                        borderRadius: 1,
-                        px: 1.25,
-                        py: 0.5,
-                        lineHeight: 1.5,
-                        height: 32,
-                      }}
-                    >
-                      {key}
-                    </Button>
-                  );
-                })}
-              </Stack>
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{
+                py: 1,
+              }}
+            >
+              {Object.entries(POPULAR_GROUPS).map(([key, _]) => {
+                const handleClick = () =>
+                  addGroup(key as keyof typeof POPULAR_GROUPS);
+                return (
+                  <Button
+                    key={key}
+                    variant="outlined"
+                    size="small"
+                    onClick={handleClick}
+                    startIcon={<AddIcon />}
+                    sx={{
+                      textTransform: "none",
+                      borderRadius: 1,
+                      px: 1.25,
+                      py: 0.5,
+                      lineHeight: 1.5,
+                      height: 32,
+                    }}
+                  >
+                    {key}
+                  </Button>
+                );
+              })}
             </Stack>
 
             {/* Render each net name as a small card with delete */}
-            <Stack spacing={0.5} sx={{ pt: 1 }}>
+            <Stack spacing={0} sx={{ pt: 1 }}>
               {netNames.map((name) => (
                 <Box
                   sx={{
@@ -250,7 +249,7 @@ export default function GenerateSection() {
                     sx={{
                       fontSize: "1rem",
                       height: 32,
-                      px: 2,
+                      px: 1,
                       fontFamily: "monospace",
                     }}
                   />
@@ -344,11 +343,12 @@ export default function GenerateSection() {
                 disabled={netNames.length === 0}
                 onClick={handleDownload}
                 sx={{ width: { xs: "100%", sm: "auto" } }}
+                startIcon={<DownloadIcon />}
               >
                 Download
               </Button>
               <Box sx={{ color: "text.secondary" }}>
-                Downloads ZIP file containing EDA library files,&nbsp;
+                Downloads ZIP file containing EDA library files, &nbsp;
                 <a
                   href="https://github.com/mac-aron/generate-GerberSockets/blob/main/README.md"
                   target="_blank"

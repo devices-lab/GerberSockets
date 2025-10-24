@@ -1,8 +1,8 @@
+import type { Dispatch, SetStateAction } from "react";
 import JSZip from "jszip";
 import { drawGerberCanvas } from "./drawGerber";
 import { parseSockets } from "./parseSockets";
 import type { GerberSocket } from "./parseSockets";
-import type { Dispatch, SetStateAction } from "react";
 import { clearCanvas } from "./drawGerber";
 
 let gerberParserReady: Promise<any> | null = null;
@@ -100,11 +100,11 @@ export const validGerberExtensions = [
   ".gtp", // Gerber Top Paste
   ".gm1", // Mechanical Layer 1
   ".gm2", // Mechanical Layer 2
-  // '.drl',       // Drill file (Excellon format)
-  // '.xln',       // Alternate drill file extension
+  // ".drl", // Drill file (Excellon format)
+  // ".xln", // Alternate drill file extension
   ".gml", // Gerber Mechanical Layer
   ".gko", // Keep-out layer
-  // '.gpi',       // Gerber Plot Information
+  // ".gpi", // Gerber Plot Information
   ".gbs", // Gerber Bottom Soldermask
   ".gts", // Gerber Top Soldermask
 ];
@@ -171,7 +171,7 @@ export const handleGerberUpload = async (
     }
   } else {
     setStatusMessage(
-      "The uploaded file was not recognized as a gerber file / zip."
+      "The uploaded file was not recognized as a Gerber file / zip"
     );
     setStatusSeverity("error");
     return;
@@ -181,11 +181,11 @@ export const handleGerberUpload = async (
 
   if (gerberSet.gerbers.length === 0) {
     if (file.name.endsWith(".zip")) {
-      setStatusMessage("No gerber files were found in the uploaded zip.");
+      setStatusMessage("No Gerber files were found in the uploaded zi");
       setStatusSeverity("error");
     } else {
       setStatusMessage(
-        "The uploaded file was not recognized as a gerber file."
+        "The uploaded file was not recognized as a Gerber file"
       );
       setStatusSeverity("error");
     }

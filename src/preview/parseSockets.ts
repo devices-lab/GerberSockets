@@ -46,7 +46,7 @@ export const parseSockets = (
   }
   if (!socketGerberLayer) {
     setStatusMessage(
-      "No GerberSockets layer found in the uploaded gerber files."
+      "No GerberSockets layer found in the uploaded gerber files"
     );
     setStatusSeverity("error");
     return [];
@@ -224,16 +224,14 @@ export const parseSockets = (
 
   if (asciiParsingErrors) {
     setStatusMessage(
-      `${asciiParsingErrors} ASCII GerberSocket(s) failed to have their ASCII decoded.`
+      `${asciiParsingErrors} ASCII GerberSocket(s) failed to have their ASCII decoded`
     );
     setStatusSeverity("warning");
   }
 
   // If no ASCII identifiers found, show all circles as legacy sockets
   if (identifiersFound === 0 && Object.keys(circles).length > 0) {
-    setStatusMessage(
-      "No ASCII GerberSocket identifiers were found.\nDisplaying all zero-length lines (legacy sockets) instead."
-    );
+    setStatusMessage("No ASCII GerberSocket identifiers were found, showing legacy sockets instead");
     setStatusSeverity("warning");
 
     // Display all circles as sockets without ASCII

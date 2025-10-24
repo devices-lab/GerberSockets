@@ -1,6 +1,7 @@
 // NOTE: AI generated
-import { useRef, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useRef, useState } from "react";
+import { Box } from "@mui/material";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 type FileUploadDropZoneProps = {
   onFileDrop: (file: File) => void;
@@ -8,8 +9,12 @@ type FileUploadDropZoneProps = {
   accept?: string;
 };
 
-export default function FileUploadDropZone({ onFileDrop, message, accept }: FileUploadDropZoneProps) {
+export default function FileUploadDropZone({
+  onFileDrop,
+  accept,
+}: FileUploadDropZoneProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [isHovering, setIsHovering] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
@@ -35,17 +40,39 @@ export default function FileUploadDropZone({ onFileDrop, message, accept }: File
       onDragEnter={() => setIsDragging(true)}
       onDragLeave={() => setIsDragging(false)}
       onDrop={handleDrop}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       sx={{
-        border: '2px dashed #aaa',
-        borderRadius: 2,
-        padding: 4,
-        textAlign: 'center',
-        backgroundColor: isDragging ? '#f0f0f0' : '#fafafa',
-        transition: 'background-color 0.2s ease-in-out',
-        cursor: 'pointer',
+        border: "2px dashed",
+        borderColor: isDragging ? "primary.dark" : "divider",
+        borderRadius: 1,
+        padding: 6,
+        minHeight: 400,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 2,
+        textAlign: "center",
+        backgroundColor: isDragging ? "action.hover" : "transparent",
+        transition: "background-color 0.2s ease-in-out, border-color 0.2s ease-in-out",
+        cursor: "pointer",
+        "&:hover": {
+          backgroundColor: "action.hover",
+          borderColor: "primary.main",
+        },
       }}
     >
-      <Typography variant="body1">{message || "Click, or drop a file here"}</Typography>
+      <FileUploadIcon 
+        sx={{ 
+          fontSize: 64, 
+          color: isHovering || isDragging ? "primary.dark" : "primary.main",
+          transition: "color 0.2s ease-in-out",
+        }} 
+      />
+      <Box sx={{ color: "text.secondary" }}>
+        Accepts ZIP file or any Gerber files
+      </Box>
 
       <input
         type="file"
