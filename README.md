@@ -1,4 +1,4 @@
-# ASCII GerberSockets generator
+# GerberSockets generator and previewer
 
 ![GerberSockets webpage](./image.png)
 
