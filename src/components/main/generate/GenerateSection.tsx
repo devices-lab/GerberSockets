@@ -6,7 +6,7 @@ import {
   type EDA,
   type CrosshairLayer,
   type SocketsLayer,
-} from "./../../generate/generateLibrary";
+} from "../../../generate/generateLibrary";
 
 import {
   Box,
@@ -31,7 +31,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import AddIcon from "@mui/icons-material/Add";
-import CustomDivider from "./CustomDivider";
+import CustomDivider from "../CustomDivider";
 
 const ASCII_REGEX = /^[\x00-\x7F]*$/;
 
@@ -173,7 +173,7 @@ export default function GenerateSection() {
                 fullWidth
                 label="Net name"
                 value={newNet}
-                sx = {{ maxWidth: 600 }}
+                sx={{ maxWidth: 600 }}
                 onChange={(e) => {
                   setNewNet(e.target.value);
                   if (netError) setNetError("");

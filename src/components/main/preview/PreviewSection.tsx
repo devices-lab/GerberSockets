@@ -1,12 +1,12 @@
 import { Box, Stack } from "@mui/material";
-import CustomDivider from "./CustomDivider";
+import CustomDivider from "../CustomDivider";
 import {
   handleGerberUpload,
   validGerberExtensions,
-} from "../../preview/parseGerber";
+} from "../../../preview/parseGerber";
 import { useRef, useState } from "react";
 import FileUploadDropZone from "./FileUploadDropZone";
-import type { GerberSocket } from "../../preview/parseSockets";
+import type { GerberSocket } from "../../../preview/parseSockets";
 import { Typography } from "@mui/material";
 import { Alert, AlertTitle } from "@mui/material";
 
@@ -38,7 +38,7 @@ export default function PreviewSection() {
 
   return (
     <Stack spacing={2} sx={{ mb: 4 }}>
-      <CustomDivider name="View ASCII GerberSockets" />
+      <CustomDivider name="Preview ASCII GerberSockets" />
 
       <FileUploadDropZone
         onFileDrop={handleUpload}

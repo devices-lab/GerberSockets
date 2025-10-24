@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Stack, Tabs, Tab, useMediaQuery, useTheme } from "@mui/material";
-import PreviewSection from "./PreviewSection";
-import GenerateSection from "./GenerateSection";
+import PreviewSection from "./preview/PreviewSection";
+import GenerateSection from "./generate/GenerateSection";
 
 const Main: React.FC = () => {
   const theme = useTheme();
