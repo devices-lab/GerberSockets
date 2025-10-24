@@ -197,7 +197,10 @@ export const handleGerberUpload = async (
     setStatusMessage,
     setStatusSeverity
   );
-  onSocketsParsed(sockets);
 
   drawGerberCanvas(gerberSet, sockets, canvas);
+
+  // Return socket info for the UI (including canvas positions)
+  console.log("Parsed GerberSockets:", sockets);
+  onSocketsParsed(sockets);
 };

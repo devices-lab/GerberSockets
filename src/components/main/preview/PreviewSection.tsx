@@ -10,6 +10,7 @@ import {
 } from "../../../preview/parseGerber";
 import type { GerberSocket } from "../../../preview/parseSockets";
 import { isOnGrid, GRID_DIVISION } from "../../../preview/gridValidation";
+import { GerberSocketChip } from "./GerberSocketChip";
 
 export default function PreviewSection() {
   const gerberCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -127,6 +128,33 @@ export default function PreviewSection() {
                 height: "100%",
               }}
             />
+
+            {/* Absolute positioned GerberSocketsChips overlaying canvas which you can hover over for their ASCII value */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                pointerEvents: "none",
+              }}
+            >
+              {gerberSocketsInfo.map((socket, index) => {
+                if (socket.canvasX === undefined || socket.canvasY === undefined) {
+                  return null;
+                }
+
+                return (
+                  <GerberSocketChip
+                    key={index}
+                    canvasX={socket.canvasX}
+                    canvasY={socket.canvasY}
+                    ascii={socket.ascii}
+                  />
+                );
+              })}
+            </Box>
           </Box>
 
           {/* Gerber info for each gerber socket listed */}

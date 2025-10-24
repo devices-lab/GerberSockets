@@ -6,6 +6,8 @@ export interface GerberSocket {
   x: number;
   y: number;
   diameters?: number[]; // For showing info on legacy sockets without ASCII
+  canvasX?: number; // Canvas position X (added later)
+  canvasY?: number; // Canvas position Y (added later)
 }
 
 export interface GerberKeepoutZone {

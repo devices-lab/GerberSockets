@@ -2,7 +2,7 @@ import type { Gerber, GerberSet } from "./parseGerber";
 import type { GerberSocket } from "./parseSockets";
 
 // Drawing parameters
-const canvasDPI = 2;
+export const canvasDPI = 2;
 let scale: number;
 let offsetX: number;
 let offsetY: number;
@@ -101,12 +101,19 @@ const drawGerberLayer = (
   }
 };
 
+// Mutate sockets within array to add canvas positions
+const assignCanvasPosToSockets = (sockets: GerberSocket[]) => {
+  for (let i = 0; i < sockets.length; i++) {
+    const socket = sockets[i];
+    
+    sockets[i].canvasX = offsetX + socket.x * scale;
+    sockets[i].canvasY = offsetY - socket.y * scale;
+  }
+}
+
 const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    console.error("Failed to get canvas 2D context.");
-    return;
-  }
+  if (!ctx) throw("Failed to get canvas 2D context.");
 
   const px = offsetX + socket.x * scale;
   const py = offsetY - socket.y * scale;
@@ -128,11 +135,12 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.font = "32px Arial";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "black";
-  ctx.fillText(socket.ascii, px + 20, py);
+  // ASCII Text
+  // ctx.font = "32px Arial";
+  // ctx.textAlign = "left";
+  // ctx.textBaseline = "middle";
+  // ctx.fillStyle = "black";
+  // ctx.fillText(socket.ascii, px + 20, py);
 };
 
 export const drawGerberCanvas = (
@@ -196,10 +204,7 @@ export const drawGerberCanvas = (
   }
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    console.error("Failed to get canvas 2D context.");
-    return;
-  }
+  if (!ctx) throw("Failed to get canvas 2D context.");
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -212,7 +217,8 @@ export const drawGerberCanvas = (
   ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Draw sockets ontop
+  // Set canvas positions of sockets
+  assignCanvasPosToSockets(sockets);
   for (const socket of sockets) {
     drawGerberSocket(socket, canvas);
   }
