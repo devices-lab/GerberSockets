@@ -1,9 +1,11 @@
 import type { GerberSet } from './ParseGerber';
+import type { Dispatch, SetStateAction } from 'react';
 
 export interface GerberSocket {
   ascii: string;
   x: number;
   y: number; 
+  diameters?: number[]; // For showing info on legacy sockets without ASCII
 }
 
 export interface GerberKeepoutZone {
@@ -24,7 +26,11 @@ export interface GerberKeepoutZone {
         is the ASCII code of the character.
       - Only diameters matching the expected format and value ranges are decoded.
 */
-export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
+export const parseSockets = (
+  gerberSet: GerberSet,
+  setStatusMessage: Dispatch<SetStateAction<string | null>>,
+  setStatusSeverity: Dispatch<SetStateAction<"error" | "warning" | "info" | "success">>
+): GerberSocket[] => {
   // Find the GerberSockets layer
   let socketGerberLayer = null;
   for (const gerber of gerberSet.gerbers) {
@@ -34,11 +40,12 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     }
   }
   if (!socketGerberLayer) {
-    alert('Error: No GerberSockets layer found in the uploaded gerber files.');
+    setStatusMessage('No GerberSockets layer found in the uploaded gerber files.');
+    setStatusSeverity('error');
     return [];
   }
 
-  const sockets: GerberSocket[] = [];
+  let sockets: GerberSocket[] = [];
 
   console.log(`graphicObjects of layer '${socketGerberLayer.filename}'`, socketGerberLayer.graphicObjects);
 
@@ -101,6 +108,7 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
   // Find zero-length lines as "circles"
   const circles: Record<string, { x: number; y: number; diameters: number[] }> = {};
 
+  const DEBUG = true;
   // NOTE: AI generated circle finding code, needs checking and fixing
   for (const obj of socketGerberLayer.graphicObjects) {
     if (obj.type === 'op' && obj.op === 'int') {
@@ -113,6 +121,10 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
         if (prevObj.type === 'op' && prevObj.op === 'move') {
           const { x: px, y: py } = prevObj.coord;
           if (x === px && y === py) {
+            if (DEBUG) {
+              console.log(`Zero-length line (circle) found at (${x}, ${y})`);
+              console.log(`Line numbers: move ${prevObj.line}, int ${obj.line}`);
+            }
             // Zero-length line found
             // Find the current tool to get diameter
             let toolCode = null;
@@ -133,6 +145,11 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
                     if (!circles[key]) {
                       circles[key] = { x, y, diameters: [] };
                     }
+                    if (DEBUG) {
+                      console.log(`  Diameter found: ${diameter}`);
+                      console.log(`  Tool code used: ${toolCode}`);
+                      console.log(`  Tool line number: ${lookbackObj.line}`);
+                    }
                     circles[key].diameters.push(diameter);
                   }
                   break;
@@ -145,30 +162,62 @@ export const parseSockets = (gerberSet: GerberSet): GerberSocket[] => {
     }
   }
 
-  console.log('Circles found:', circles);
+  console.log('Circles (zero-length lines) found:', circles);
 
+  let asciiParsingErrors = 0;
+  let identifiersFound = 0;
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
     let ascii = '';
+    let hasIdentifier = false;
     for (const diameter of circle.diameters) {
       const diameterStr = diameter.toFixed(5); // Ensure consistent decimal places
       const match = diameterStr.match(/^0\.(\d{2})(\d{3})$/);
       if (match) {
+        if (match[1] === '00' && match[2] === '999') {
+          hasIdentifier = true;
+          identifiersFound++;
+          continue; // Identifier circle, skip
+        }
         const asciiCode = parseInt(match[2], 10);
         if (asciiCode >= 32 && asciiCode <= 126) { // Printable ASCII range
           ascii += String.fromCharCode(asciiCode);
         }
       }
     }
+    
+    // ASCII Socket must have identifier circle
+    if (!hasIdentifier) continue; 
+
     // Only add socket if we decoded some ASCII
     if (ascii) {
-      sockets.push({ ascii, x: circle.x, y: circle.y });
+      sockets.push({ ascii, x: circle.x, y: circle.y } as GerberSocket);
     } else {
+      asciiParsingErrors++;
+      console.warn(`ASCII parsing failed for socket at (${circle.x}, ${circle.y}).`);
       // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
-      // don't show up, for now we'll just add a '?' placeholder showing the socket if no ASCII is
-      // decoded. This is likely to lead to false positives for sockets though.
-      sockets.push({ ascii: '?', x: circle.x, y: circle.y });
+      // don't show up, for now we'll just add a placeholder showing the socket if no ASCII is
+      // decoded.
+      sockets.push({ ascii: '', x: circle.x, y: circle.y } as GerberSocket);
+    }
+  }
+
+  if (asciiParsingErrors) {
+    setStatusMessage(`${asciiParsingErrors} ASCII GerberSocket(s) failed to have their ASCII decoded.`);
+    setStatusSeverity('warning');
+  }
+
+  // If no ASCII identifiers found, show all circles as legacy sockets
+  if (identifiersFound === 0 && Object.keys(circles).length > 0) {
+    setStatusMessage('No ASCII GerberSocket identifiers were found.\nDisplaying all zero-length lines (legacy sockets) instead.');
+    setStatusSeverity('warning');
+
+    // Display all circles as sockets without ASCII
+    sockets = [];
+    for (const key in circles) {
+      const circle = circles[key];
+      sockets.push({ ascii: '', x: circle.x, y: circle.y, diameters: circle.diameters } as GerberSocket);
     }
   }
 
