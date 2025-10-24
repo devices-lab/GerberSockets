@@ -1,9 +1,12 @@
 import { Box, Stack } from "@mui/material";
 import CustomDivider from "./CustomDivider";
-import { handleGerberUpload, validGerberExtensions } from "./parseGerber";
+import {
+  handleGerberUpload,
+  validGerberExtensions,
+} from "../../preview/parseGerber";
 import { useRef, useState } from "react";
 import FileUploadDropZone from "./FileUploadDropZone";
-import type { GerberSocket } from "./parseSockets";
+import type { GerberSocket } from "../../preview/parseSockets";
 import { Typography } from "@mui/material";
 import { Alert, AlertTitle } from "@mui/material";
 
