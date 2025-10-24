@@ -89,7 +89,7 @@ export default function PreviewSection() {
 
           <FileUploadDropZone
             onFileDrop={handleUpload}
-            accept={".zip," + validGerberExtensions.join("")}
+            accept={".zip," + validGerberExtensions.join("")} // Putting .zip first so it's clearer to the user
           />
         </Box>
       )}
@@ -204,7 +204,7 @@ export default function PreviewSection() {
                               fontFamily: "monospace",
                             }}
                           >
-                            x: {socket.x.toFixed(3)}, y: {socket.y.toFixed(3)}
+                            x: {socket.x.toFixed(3)}, y: {socket.y.toFixed(3)}{socket?.diameters ? `, diameters: [${socket.diameters.join(", ")}]` : ''}
                           </Typography>
 
                           {/* Grid alignment indicator */}
