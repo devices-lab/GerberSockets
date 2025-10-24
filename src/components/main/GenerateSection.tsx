@@ -214,6 +214,7 @@ export default function GenerateSection() {
                     addGroup(key as keyof typeof POPULAR_GROUPS);
                   return (
                     <Button
+                      key={key}
                       variant="outlined"
                       size="small"
                       onClick={handleClick}

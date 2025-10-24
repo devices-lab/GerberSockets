@@ -108,6 +108,7 @@ export const parseSockets = (
   // Find zero-length lines as "circles"
   const circles: Record<string, { x: number; y: number; diameters: number[] }> = {};
 
+  const DEBUG = true;
   // NOTE: AI generated circle finding code, needs checking and fixing
   for (const obj of socketGerberLayer.graphicObjects) {
     if (obj.type === 'op' && obj.op === 'int') {
@@ -120,8 +121,10 @@ export const parseSockets = (
         if (prevObj.type === 'op' && prevObj.op === 'move') {
           const { x: px, y: py } = prevObj.coord;
           if (x === px && y === py) {
-            console.log(`Zero-length line (circle) found at (${x}, ${y})`);
-            console.log(`Line numbers: move ${prevObj.line}, int ${obj.line}`);
+            if (DEBUG) {
+              console.log(`Zero-length line (circle) found at (${x}, ${y})`);
+              console.log(`Line numbers: move ${prevObj.line}, int ${obj.line}`);
+            }
             // Zero-length line found
             // Find the current tool to get diameter
             let toolCode = null;
@@ -142,9 +145,11 @@ export const parseSockets = (
                     if (!circles[key]) {
                       circles[key] = { x, y, diameters: [] };
                     }
-                    console.log(`  Diameter found: ${diameter}`);
-                    console.log(`  Tool code used: ${toolCode}`);
-                    console.log(`  Tool line number: ${lookbackObj.line}`);
+                    if (DEBUG) {
+                      console.log(`  Diameter found: ${diameter}`);
+                      console.log(`  Tool code used: ${toolCode}`);
+                      console.log(`  Tool line number: ${lookbackObj.line}`);
+                    }
                     circles[key].diameters.push(diameter);
                   }
                   break;
@@ -157,7 +162,7 @@ export const parseSockets = (
     }
   }
 
-  console.log('Circles found:', circles);
+  console.log('Circles (zero-length lines) found:', circles);
 
   let asciiParsingErrors = 0;
   let identifiersFound = 0;

@@ -34,8 +34,8 @@ export default function ViewSection() {
 
       <FileUploadDropZone
         onFileDrop={handleUpload}
-        message="Click, or drop a Gerber/ZIP file here"
-        accept={".zip," + validGerberExtensions.join("")}
+        message="Click, or drop a Gerber/ZIP file here to view its GerberSockets"
+        accept={".zip," + validGerberExtensions.join("")} // Putting .zip first so it's clearer for the user
       />
 
       <Box>
@@ -74,7 +74,7 @@ export default function ViewSection() {
             flexWrap: 'wrap',
             gap: 1,
           }}>
-            {gerberSocketsInfo.length === 0 ? (
+            {!gerberSocketsInfo.length ? (
               <Typography variant="body2">No Gerber sockets loaded.</Typography>
             ) : (
               gerberSocketsInfo.map((socket, index) => (
