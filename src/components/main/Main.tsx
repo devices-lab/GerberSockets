@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Box, Stack, Tabs, Tab, useMediaQuery, useTheme } from "@mui/material";
-import ViewSection from "./ViewSection";
+import ViewSection from "./PreviewSection";
 import GenerateSection from "./GenerateSection";
 
 const Main: React.FC = () => {
