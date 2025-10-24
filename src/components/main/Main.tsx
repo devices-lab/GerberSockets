@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Box, Stack, Tabs, Tab, useMediaQuery, useTheme } from "@mui/material";
-import ViewSection from "./ViewSection";
-import GenerateSection from "./GenerateSection";
+import PreviewSection from "./preview/PreviewSection";
+import GenerateSection from "./generate/GenerateSection";
 
 const Main: React.FC = () => {
   const theme = useTheme();
@@ -22,7 +22,7 @@ const Main: React.FC = () => {
               <GenerateSection />
             </Box>
             <Box flex={1}>
-              <ViewSection />
+              <PreviewSection />
             </Box>
           </Stack>
         </Box>
@@ -40,7 +40,7 @@ const Main: React.FC = () => {
           </Tabs>
           <Box sx={{ px: 2 }}>
             {activeTab === 0 && <GenerateSection />}
-            {activeTab === 1 && <ViewSection />}
+            {activeTab === 1 && <PreviewSection />}
           </Box>
         </Box>
       )}

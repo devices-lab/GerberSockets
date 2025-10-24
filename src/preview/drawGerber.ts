@@ -1,5 +1,5 @@
-import type { Gerber, GerberSet } from './ParseGerber';
-import type { GerberSocket } from './ParseSockets';
+import type { Gerber, GerberSet } from "./parseGerber";
+import type { GerberSocket } from "./parseSockets";
 
 // Drawing parameters
 const canvasDPI = 2;
@@ -16,14 +16,14 @@ const initCanvas = (canvas: HTMLCanvasElement) => {
 
   offsetX = canvas.width / 2;
   offsetY = canvas.height / 2;
-}
+};
 
 export const clearCanvas = (canvas: HTMLCanvasElement) => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (ctx) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }
-}
+};
 
 type Coord = { x: number; y: number };
 type Tool = { shape: string; params: number[] };
@@ -32,38 +32,42 @@ type Tool = { shape: string; params: number[] };
 // NOTE: Mostly AI generated function, haven't looked at it properly yet
 // BUG: This is quite a primitive rendering, doesn't handle arcs, polygons, fills, etc,
 // but should be enough to understand the socket placements relative to the PCB.
-const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber = 0) => {
-  const ctx = canvas.getContext('2d');
+const drawGerberLayer = (
+  gerber: Gerber,
+  canvas: HTMLCanvasElement,
+  layerNumber = 0
+) => {
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    console.error('Failed to get canvas 2D context.');
+    console.error("Failed to get canvas 2D context.");
     return;
   }
 
-  const drawColor = 'hsl(' + (layerNumber * 67 % 360) + ', 70%, 50%)';
+  const drawColor = "hsl(" + ((layerNumber * 67) % 360) + ", 70%, 50%)";
 
   const tools: Record<string, Tool> = {};
   let currentTool: Tool | null = null;
   let lastCoord: Coord | null = null;
 
   for (const item of gerber.graphicObjects) {
-    if (item.type === 'tool') {
+    if (item.type === "tool") {
       tools[item.code] = item.tool;
     }
 
-    if (item.type === 'set' && item.prop === 'tool') {
+    if (item.type === "set" && item.prop === "tool") {
       currentTool = tools[item.value];
     }
 
-    if (item.type === 'op') {
+    if (item.type === "op") {
       const { x, y } = item.coord;
       const px = offsetX + x * scale;
       const py = offsetY - y * scale;
 
-      if (item.op === 'move') {
+      if (item.op === "move") {
         lastCoord = { x: px, y: py };
       }
 
-      if (item.op === 'int' && lastCoord && currentTool) {
+      if (item.op === "int" && lastCoord && currentTool) {
         ctx.beginPath();
         ctx.moveTo(lastCoord.x, lastCoord.y);
         ctx.lineTo(px, py);
@@ -80,7 +84,7 @@ const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber 
         lastCoord = { x: px, y: py };
       }
 
-      if (item.op === 'flash' && currentTool) {
+      if (item.op === "flash" && currentTool) {
         ctx.beginPath();
         const radius = (currentTool.params?.[0] || 0.2) * scale / 2;
         if (radius > canvas.width / 3) {
@@ -95,12 +99,12 @@ const drawGerberLayer = (gerber: Gerber, canvas: HTMLCanvasElement, layerNumber 
       }
     }
   }
-}
+};
 
 const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    console.error('Failed to get canvas 2D context.');
+    console.error("Failed to get canvas 2D context.");
     return;
   }
 
@@ -120,19 +124,23 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   ctx.lineTo(px + radius, py + radius);
   ctx.moveTo(px + radius, py - radius);
   ctx.lineTo(px - radius, py + radius);
-  ctx.strokeStyle = 'black';
+  ctx.strokeStyle = "black";
   ctx.lineWidth = 4;
   ctx.stroke();
 
-  ctx.font = '32px Arial';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'black';
+  ctx.font = "32px Arial";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "black";
   ctx.fillText(socket.ascii, px + 20, py);
-}
+};
 
-export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], canvas: HTMLCanvasElement) => {
-  console.log('Drawing Gerber Layers:', gerberSet.gerbers);
+export const drawGerberCanvas = (
+  gerberSet: GerberSet,
+  sockets: GerberSocket[],
+  canvas: HTMLCanvasElement
+) => {
+  console.log("Drawing Gerber Layers:", gerberSet.gerbers);
 
   // Check if there's an edge cuts layer
   const edgeCutsLayer = gerberSet.gerbers.find(gerber => 
@@ -144,12 +152,13 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
   // Find bounds of all gerber layers
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   let avgX = 0, avgY = 0, pointCount = 0;
+
   for (const gerber of gerberSet.gerbers) {
     // If edge cuts layer exists, use only it when calculating bounds
     if (edgeCutsLayer && gerber !== edgeCutsLayer) continue; 
 
     for (const item of gerber.graphicObjects) {
-      if (item.type === 'op') {
+      if (item.type === "op") {
         const { x, y } = item.coord;
         if (x < minX) minX = x;
         if (y < minY) minY = y;
@@ -171,7 +180,7 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
   const scaleX = canvasRect.width / gerberWidth;
   const scaleY = canvasRect.height / gerberHeight;
   scale = Math.min(scaleX, scaleY) * 0.9; // 90% to add some padding
-  scale *= canvasDPI; 
+  scale *= canvasDPI;
 
   initCanvas(canvas); // Sets offsetX/Y
 
@@ -186,9 +195,9 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
     offsetY = avgY;
   }
 
-  const ctx = canvas.getContext('2d');
+  const ctx = canvas.getContext("2d");
   if (!ctx) {
-    console.error('Failed to get canvas 2D context.');
+    console.error("Failed to get canvas 2D context.");
     return;
   }
 
@@ -200,11 +209,11 @@ export const drawGerberCanvas = (gerberSet: GerberSet, sockets: GerberSocket[], 
   }
 
   // Overlay semi-transparent white to fade layers
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+  ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Draw sockets ontop
   for (const socket of sockets) {
     drawGerberSocket(socket, canvas);
   }
-}
+};
