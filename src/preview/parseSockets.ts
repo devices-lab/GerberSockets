@@ -117,65 +117,61 @@ export const parseSockets = (
   // NOTE:  We have a different format to the backend (gerbonara). No apeture or diameter here,
   // we just have the raw gerber commands.
 
+  type Coord = { x: number; y: number };
+  type Tool = { shape: string; params: number[] };
+
+  const tools: Record<string, Tool> = {};
+  let currentTool: Tool | null = null;
+  let lastCoord: Coord | null = null;
+
   // Find zero-length lines as "circles"
   const circles: Record<string, { x: number; y: number; diameters: number[] }> =
     {};
 
   const DEBUG = true;
-  // NOTE: AI generated circle finding code, needs checking and fixing
-  for (const obj of socketGerberLayer.graphicObjects) {
-    if (obj.type === "op" && obj.op === "int") {
-      const { x, y } = obj.coord;
+  // Circle finding code
+  for (const item of socketGerberLayer.graphicObjects) {
+    if (item.type === "tool") {
+      tools[item.code] = item.tool;
+      if (DEBUG)
+        console.log(`Tool created: code=${item.code}, diameter=${item.tool.params?.[0]} line=${item.line}`);
+    }
 
-      // Check if previous op was a move to the same coord (zero-length line)
-      const prevIndex = socketGerberLayer.graphicObjects.indexOf(obj) - 1;
-      if (prevIndex >= 0) {
-        const prevObj = socketGerberLayer.graphicObjects[prevIndex];
-        if (prevObj.type === "op" && prevObj.op === "move") {
-          const { x: px, y: py } = prevObj.coord;
-          if (x === px && y === py) {
-            if (DEBUG) {
-              console.log(`Zero-length line (circle) found at (${x}, ${y})`);
-              console.log(
-                `Line numbers: move ${prevObj.line}, int ${obj.line}`
-              );
-            }
-            // Zero-length line found
-            // Find the current tool to get diameter
-            let toolCode = null;
-            for (let i = prevIndex; i >= 0; i--) {
-              const lookbackObj = socketGerberLayer.graphicObjects[i];
-              if (lookbackObj.type === "set" && lookbackObj.prop === "tool") {
-                toolCode = lookbackObj.value;
-                break;
-              }
-            }
-            if (toolCode) {
-              // Find tool definition
-              for (const lookbackObj of socketGerberLayer.graphicObjects) {
-                if (
-                  lookbackObj.type === "tool" &&
-                  lookbackObj.code === toolCode
-                ) {
-                  const diameter = lookbackObj.tool.params?.[0];
-                  if (typeof diameter === "number") {
-                    const key = `${x},${y}`;
-                    if (!circles[key]) {
-                      circles[key] = { x, y, diameters: [] };
-                    }
-                    if (DEBUG) {
-                      console.log(`  Diameter found: ${diameter}`);
-                      console.log(`  Tool code used: ${toolCode}`);
-                      console.log(`  Tool line number: ${lookbackObj.line}`);
-                    }
-                    circles[key].diameters.push(diameter);
-                  }
-                  break;
-                }
-              }
-            }
+    if (item.type === "set" && item.prop === "tool") {
+      currentTool = tools[item.value];
+      if (DEBUG)
+        console.log(`Current tool set to code=${item.value}, diameter=${currentTool?.params?.[0]} line=${item.line}`);
+    }
+
+    if (item.type === "op") {
+      const { x, y } = item.coord;
+
+      if (item.op === "move") {
+        lastCoord = { x, y };
+        if (DEBUG) console.log(`Move to: (${x}, ${y})`, `line=${item.line}`);
+      }
+
+      if (item.op === "int" && lastCoord && currentTool) {
+        if (DEBUG)
+          console.log(
+            `Interpolate to: (${x}, ${y}) from (${lastCoord.x}, ${lastCoord.y}) with tool code=${
+              Object.keys(tools).find((key) => tools[key] === currentTool)
+            }, line=${item.line}`
+          );
+
+        // Check for zero-length line
+        if (x === lastCoord.x && y === lastCoord.y) {
+          const diameter = currentTool.params?.[0] || 0;
+          const key = `${x.toFixed(5)},${y.toFixed(5)}`;
+          if (!circles[key]) {
+            circles[key] = { x, y, diameters: [] };
           }
+          circles[key].diameters.push(diameter);
+          if (DEBUG)
+            console.log(`  Zero-length line (circle) found at (${x}, ${y}) with diameter: ${diameter}`);
         }
+
+        lastCoord = { x, y };
       }
     }
   }
@@ -184,11 +180,13 @@ export const parseSockets = (
 
   let asciiParsingErrors = 0;
   let identifiersFound = 0;
+  let overlappingIdentifierCount = 0;
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
     let ascii = "";
     let hasIdentifier = false;
+    let localIdentifiersFound = 0;
     for (const diameter of circle.diameters) {
       const diameterStr = diameter.toFixed(5); // Ensure consistent decimal places
       const match = diameterStr.match(/^0\.(\d{2})(\d{3})$/);
@@ -196,6 +194,14 @@ export const parseSockets = (
         if (match[1] === "00" && match[2] === "999") {
           hasIdentifier = true;
           identifiersFound++;
+          localIdentifiersFound++;
+
+          if (localIdentifiersFound > 1) {
+            overlappingIdentifierCount++;
+            console.warn(
+              `Overlapping identifier circles found at (${circle.x}, ${circle.y}).`
+            );
+          }
           continue; // Identifier circle, skip
         }
         const asciiCode = parseInt(match[2], 10);
@@ -247,6 +253,13 @@ export const parseSockets = (
         diameters: circle.diameters,
       } as GerberSocket);
     }
+  }
+
+  if (overlappingIdentifierCount) {
+    setStatusMessage(
+      `${overlappingIdentifierCount} locations have overlapping ASCII identifiers`
+    );
+    setStatusSeverity("warning");
   }
 
   // Sort sockets from top-left to bottom-right
