@@ -15,8 +15,6 @@ export interface GerberKeepoutZone {
 }
 
 /*
-   NOTE: Comment copied from the backend
-
   Extracts socket locations from Gerber objects using encoded ASCII identifiers.
 
   This method scans the loaded Gerber data for zero-length lines (interpreted as "circles")
@@ -28,94 +26,51 @@ export interface GerberKeepoutZone {
         is the ASCII code of the character.
       - Only diameters matching the expected format and value ranges are decoded.
 */
-export const parseSockets = (
-  gerberSet: GerberSet,
-  setStatusMessage: Dispatch<SetStateAction<string | null>>,
-  setStatusSeverity: Dispatch<
-    SetStateAction<"error" | "warning" | "info" | "success">
-  >
-): GerberSocket[] => {
-  // Find the GerberSockets layer
-  let socketGerberLayer = null;
-  for (const gerber of gerberSet.gerbers) {
-    if (
-      gerber.filename.toLowerCase().endsWith(".gbr") &&
-      gerber.filename.includes("GerberSockets")
-    ) {
-      socketGerberLayer = gerber;
-      break;
-    }
-  }
-  if (!socketGerberLayer) {
-    setStatusMessage(
-      "No GerberSockets layer found in the uploaded gerber files"
-    );
-    setStatusSeverity("error");
-    return [];
-  }
 
-  let sockets: GerberSocket[] = [];
+// Example JSON structure of a gerber socket in graphicObjects:
+// Tool creation example:
+// {
+//     "type": "tool",
+//     "line": 14,
+//     "code": "12", <-- The tool number
+//     "tool": {
+//         "shape": "circle",
+//         "params": [
+//             0.01083 <-- Defines the diameter of this tool
+//         ],
+//         "hole": []
+//     }
+// },
+//
+// Tool use example:
+// {
+//     "type": "set", <-- Sets the current tool
+//     "line": 102,
+//     "prop": "tool",
+//     "value": "12" <-- The tool number being used
+// },
+// {
+//     "type": "op",
+//     "line": 103,
+//     "op": "move", <-- Move to position without drawing
+//     "coord": {
+//         "x": -6.5,
+//         "y": 8.25
+//     }
+// },
+// {
+//     "type": "op",
+//     "line": 104,
+//     "op": "int", <-- Interpolate (draw) to position
+//     "coord": {
+//         "x": -6.5, <-- Same position = zero-length line
+//         "y": 8.25
+//     }
+// },
 
-  console.log(
-    `graphicObjects of layer '${socketGerberLayer.filename}'`,
-    socketGerberLayer.graphicObjects
-  );
-
-  // Example JSON structure of a gerber socket in graphicObjects:
-  // Tool creation example:
-  // {
-  //     "type": "tool",
-  //     "line": 14,
-  //     "code": "12", <-- The tool number
-  //     "tool": {
-  //         "shape": "circle",
-  //         "params": [
-  //             0.01083 <-- Defines the diameter of this tool
-  //         ],
-  //         "hole": []
-  //     }
-  // },
-  //
-  // Tool use example (I think?):
-  // {
-  //     "type": "set", <-- Sets the current tool
-  //     "line": 102,
-  //     "prop": "tool",
-  //     "value": "12" <-- The tool number being used
-  // },
-  // {
-  //     "type": "op",
-  //     "line": 103,
-  //     "op": "move", <-- Move to position without drawing
-  //     "coord": {
-  //         "x": -6.5,
-  //         "y": 8.25
-  //     }
-  // },
-  // {
-  //     "type": "op",
-  //     "line": 104,
-  //     "op": "int", <-- Interpolate (draw) to position
-  //     "coord": {
-  //         "x": -6.5, <-- Same position = zero-length line
-  //         "y": 8.25
-  //     }
-  // },
-
-  // Python code reference:
-  // # 1–2. Collect zero-length lines as “circles”
-  // circles = defaultdict(list)  # (x, y) -> List[float diameter]
-  // for obj in self.gerber.objects:
-  //     if isinstance(obj, Line) and obj.x1 == obj.x2 and obj.y1 == obj.y2:
-  //         ap = getattr(obj, "aperture", None)
-  //         d = getattr(ap, "diameter", None)
-  //         if d is not None:
-  //             # Optional: quantize to avoid float-key fragmentation
-  //             pos = (obj.x1, obj.y1)
-  //             circles[pos].append(float(d))
-
-  // NOTE:  We have a different format to the backend (gerbonara). No apeture or diameter here,
-  // we just have the raw gerber commands.
+// Find zero-length lines as "circles"
+const findCircles = (socketGerberLayer: Gerber): Record<string, { x: number; y: number; diameters: number[] }> => {
+  const DEBUG = false;
 
   type Coord = { x: number; y: number };
   type Tool = { shape: string; params: number[] };
@@ -124,11 +79,8 @@ export const parseSockets = (
   let currentTool: Tool | null = null;
   let lastCoord: Coord | null = null;
 
-  // Find zero-length lines as "circles"
-  const circles: Record<string, { x: number; y: number; diameters: number[] }> =
-    {};
+  const circles: Record<string, { x: number; y: number; diameters: number[] }> = {};
 
-  const DEBUG = true;
   // Circle finding code
   for (const item of socketGerberLayer.graphicObjects) {
     if (item.type === "tool") {
@@ -176,9 +128,17 @@ export const parseSockets = (
     }
   }
 
-  console.log("Circles (zero-length lines) found:", circles);
+  return circles;
+}
 
-  let asciiParsingErrors = 0;
+const circlesToSockets = (
+  circles: Record<string, { x: number; y: number; diameters: number[] }>,
+  setStatusMessage: Dispatch<SetStateAction<string | null>>,
+  setStatusSeverity: Dispatch<SetStateAction<"error" | "warning" | "info" | "success">>
+): GerberSocket[] => {
+  let sockets: GerberSocket[] = [];
+
+  let asciiMissingCount = 0;
   let identifiersFound = 0;
   let overlappingIdentifierCount = 0;
   for (const key in circles) {
@@ -219,20 +179,17 @@ export const parseSockets = (
     if (ascii) {
       sockets.push({ ascii, x: circle.x, y: circle.y } as GerberSocket);
     } else {
-      asciiParsingErrors++;
+      asciiMissingCount++;
       console.warn(
-        `ASCII parsing failed for socket at (${circle.x}, ${circle.y}).`
+        `Missing ASCII data for GerberSocket at (${circle.x}, ${circle.y}).`
       );
-      // BUG: Since there's a socket parsing issue where MakeDevice output ASCII GerberSockets
-      // don't show up, for now we'll just add a placeholder showing the socket if no ASCII is
-      // decoded.
       sockets.push({ ascii: "", x: circle.x, y: circle.y } as GerberSocket);
     }
   }
 
-  if (asciiParsingErrors) {
+  if (asciiMissingCount) {
     setStatusMessage(
-      `${asciiParsingErrors} ASCII GerberSocket(s) failed to have their ASCII decoded`
+      `${asciiMissingCount} GerberSocket(s) were missing ASCII data`
     );
     setStatusSeverity("warning");
   }
@@ -257,7 +214,7 @@ export const parseSockets = (
 
   if (overlappingIdentifierCount) {
     setStatusMessage(
-      `${overlappingIdentifierCount} locations have overlapping ASCII identifiers`
+      `${overlappingIdentifierCount} locations have overlapping GerberSockets (identifiers)`
     );
     setStatusSeverity("warning");
   }
@@ -267,6 +224,46 @@ export const parseSockets = (
     if (a.y !== b.y) return b.y - a.y;
     return a.x - b.x;
   });
+
+  return sockets;
+}
+
+export const parseSockets = (
+  gerberSet: GerberSet,
+  setStatusMessage: Dispatch<SetStateAction<string | null>>,
+  setStatusSeverity: Dispatch<
+    SetStateAction<"error" | "warning" | "info" | "success">
+  >
+): GerberSocket[] => {
+  // Find the GerberSockets layer
+  let socketGerberLayer = null;
+  for (const gerber of gerberSet.gerbers) {
+    if (
+      gerber.filename.toLowerCase().endsWith(".gbr") &&
+      gerber.filename.includes("GerberSockets")
+    ) {
+      socketGerberLayer = gerber;
+      break;
+    }
+  }
+  if (!socketGerberLayer) {
+    setStatusMessage(
+      "No GerberSockets layer found in the uploaded gerber files"
+    );
+    setStatusSeverity("error");
+    return [];
+  }
+
+  console.log(
+    `graphicObjects of layer '${socketGerberLayer.filename}'`,
+    socketGerberLayer.graphicObjects
+  );
+
+  const circles = findCircles(socketGerberLayer);
+
+  console.log("Circles (zero-length lines) found:", circles);
+
+  const sockets = circlesToSockets(circles, setStatusMessage, setStatusSeverity);
 
   console.log("Parsed sockets:", sockets);
 
