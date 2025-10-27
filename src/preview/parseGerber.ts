@@ -198,6 +198,7 @@ export const handleGerberUpload = async (
     setStatusSeverity
   );
 
+  // Draw the gerber onto the canvas, and store socket canvas positions in sockets
   drawGerberCanvas(gerberSet, sockets, canvas);
 
   // Return socket info for the UI (including canvas positions)

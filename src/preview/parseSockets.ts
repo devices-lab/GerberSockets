@@ -1,5 +1,6 @@
 import type { GerberSet } from "./parseGerber";
 import type { Dispatch, SetStateAction } from "react";
+import type { Gerber } from "./parseGerber";
 
 export interface GerberSocket {
   ascii: string;
@@ -106,8 +107,7 @@ const findCircles = (socketGerberLayer: Gerber): Record<string, { x: number; y: 
       if (item.op === "int" && lastCoord && currentTool) {
         if (DEBUG)
           console.log(
-            `Interpolate to: (${x}, ${y}) from (${lastCoord.x}, ${lastCoord.y}) with tool code=${
-              Object.keys(tools).find((key) => tools[key] === currentTool)
+            `Interpolate to: (${x}, ${y}) from (${lastCoord.x}, ${lastCoord.y}) with tool code=${Object.keys(tools).find((key) => tools[key] === currentTool)
             }, line=${item.line}`
           );
 
@@ -144,7 +144,7 @@ const circlesToSockets = (
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
-    let ascii = "";
+    let ascii = [];
     let hasIdentifier = false;
     let localIdentifiersFound = 0;
     for (const diameter of circle.diameters) {
@@ -164,20 +164,23 @@ const circlesToSockets = (
           }
           continue; // Identifier circle, skip
         }
+        const index = parseInt(match[1], 10);
         const asciiCode = parseInt(match[2], 10);
         if (asciiCode >= 32 && asciiCode <= 126) {
           // Printable ASCII range
-          ascii += String.fromCharCode(asciiCode);
+          ascii[index] = String.fromCharCode(asciiCode);
         }
       }
     }
+
+    const asciiStr = ascii.join("");
 
     // ASCII Socket must have identifier circle
     if (!hasIdentifier) continue;
 
     // Only add socket if we decoded some ASCII
-    if (ascii) {
-      sockets.push({ ascii, x: circle.x, y: circle.y } as GerberSocket);
+    if (asciiStr) {
+      sockets.push({ ascii: asciiStr, x: circle.x, y: circle.y } as GerberSocket);
     } else {
       asciiMissingCount++;
       console.warn(
@@ -260,11 +263,9 @@ export const parseSockets = (
   );
 
   const circles = findCircles(socketGerberLayer);
-
   console.log("Circles (zero-length lines) found:", circles);
 
   const sockets = circlesToSockets(circles, setStatusMessage, setStatusSeverity);
-
   console.log("Parsed sockets:", sockets);
 
   return sockets;
