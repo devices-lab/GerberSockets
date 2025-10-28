@@ -140,7 +140,7 @@ const circlesToSockets = (
 
   let asciiMissingCount = 0;
   let identifiersFound = 0;
-  let overlappingIdentifierCount = 0;
+  let overlappingLocations: Record<string, boolean> = {};
   for (const key in circles) {
     const circle = circles[key];
     // Decode ASCII from diameters
@@ -157,7 +157,7 @@ const circlesToSockets = (
           localIdentifiersFound++;
 
           if (localIdentifiersFound > 1) {
-            overlappingIdentifierCount++;
+            overlappingLocations[key] = true;
             console.warn(
               `Overlapping identifier circles found at (${circle.x}, ${circle.y}).`
             );
@@ -168,6 +168,12 @@ const circlesToSockets = (
         const asciiCode = parseInt(match[2], 10);
         if (asciiCode >= 32 && asciiCode <= 126) {
           // Printable ASCII range
+          if (ascii[index]) {
+            overlappingLocations[key] = true;
+            console.warn(
+              `Duplicate ASCII index ${index} at (${circle.x}, ${circle.y}). Overwriting previous character.`
+            );
+          }
           ascii[index] = String.fromCharCode(asciiCode);
         }
       }
@@ -215,10 +221,11 @@ const circlesToSockets = (
     }
   }
 
-  if (overlappingIdentifierCount) {
+  if (Object.keys(overlappingLocations).length > 0) {
     setStatusMessage(
-      `${overlappingIdentifierCount} locations have overlapping GerberSockets (identifiers)`
+      `${Object.keys(overlappingLocations).length} locations have overlapping GerberSocket data`
     );
+    console.log("Overlapping locations:", Object.keys(overlappingLocations));
     setStatusSeverity("warning");
   }
 
