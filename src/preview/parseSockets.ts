@@ -238,6 +238,8 @@ const circlesToSockets = (
   return sockets;
 }
 
+const KNOWN_SOCKET_LAYER = true;
+
 export const parseSockets = (
   gerberSet: GerberSet,
   setStatusMessage: Dispatch<SetStateAction<string | null>>,
@@ -245,35 +247,63 @@ export const parseSockets = (
     SetStateAction<"error" | "warning" | "info" | "success">
   >
 ): GerberSocket[] => {
-  // Find the GerberSockets layer
-  let socketGerberLayer = null;
-  for (const gerber of gerberSet.gerbers) {
-    if (
-      gerber.filename.toLowerCase().endsWith(".gbr") &&
-      gerber.filename.includes("GerberSockets")
-    ) {
-      socketGerberLayer = gerber;
-      break;
+  if (KNOWN_SOCKET_LAYER) {
+    // Add sockets from GerberSockets named layer only
+
+    // Find the GerberSockets layer
+    let socketGerberLayer = null;
+    for (const gerber of gerberSet.gerbers) {
+      if (
+        gerber.filename.toLowerCase().endsWith(".gbr") &&
+        gerber.filename.includes("GerberSockets")
+      ) {
+        socketGerberLayer = gerber;
+        break;
+      }
     }
-  }
-  if (!socketGerberLayer) {
-    setStatusMessage(
-      "No GerberSockets layer found in the uploaded gerber files"
+    if (!socketGerberLayer) {
+      setStatusMessage(
+        "No GerberSockets layer found in the uploaded gerber files"
+      );
+      setStatusSeverity("error");
+      return [];
+    }
+
+    console.log(
+      `graphicObjects of layer '${socketGerberLayer.filename}'`,
+      socketGerberLayer.graphicObjects
     );
-    setStatusSeverity("error");
-    return [];
+
+    const circles = findCircles(socketGerberLayer);
+    console.log("Circles (zero-length lines) found:", circles);
+
+    const sockets = circlesToSockets(circles, setStatusMessage, setStatusSeverity);
+    console.log("Parsed sockets:", sockets);
+
+    return sockets;
+  } else {
+    // Add sockets from all layers
+
+    // Build the sockets array by checking all layers
+    let allCircles: Record<string, { x: number; y: number; diameters: number[] }> = {};
+    for (const gerber of gerberSet.gerbers) {
+      console.log(
+        `graphicObjects of layer '${gerber.filename}'`,
+        gerber.graphicObjects
+      );
+      try {
+        const circles = findCircles(gerber);
+        if (Object.keys(circles).length > 0) {
+          console.log(`Circles (zero-length lines) found in layer '${gerber.filename}':`, circles);
+        }
+        allCircles = { ...allCircles, ...circles };
+      } catch (e) {
+        console.error(`Error parsing circles from layer '${gerber.filename}':`, e);
+      }
+    }
+    console.log("Circles (zero-length lines) found in all layers:", allCircles);
+    const sockets = circlesToSockets(allCircles, setStatusMessage, setStatusSeverity);
+    console.log("Parsed sockets from all layers:", sockets);
+    return sockets;
   }
-
-  console.log(
-    `graphicObjects of layer '${socketGerberLayer.filename}'`,
-    socketGerberLayer.graphicObjects
-  );
-
-  const circles = findCircles(socketGerberLayer);
-  console.log("Circles (zero-length lines) found:", circles);
-
-  const sockets = circlesToSockets(circles, setStatusMessage, setStatusSeverity);
-  console.log("Parsed sockets:", sockets);
-
-  return sockets;
 };

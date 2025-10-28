@@ -8,6 +8,7 @@ import { clearCanvas } from "./drawGerber";
 let gerberParserReady: Promise<any> | null = null;
 
 // Dynamically load the gerber-parser script from CDN
+//https://www.npmjs.com/package/gerber-parser (not the 5.0.0 tracespace one)
 const loadGerberParserLibrary = (): Promise<any> => {
   if (gerberParserReady) return gerberParserReady;
 
@@ -39,6 +40,42 @@ const loadGerberParserLibrary = (): Promise<any> => {
   return gerberParserReady;
 };
 
+let gerberPlotterReady: Promise<any> | null = null;
+
+// Dynamically load the gerber-plotter script from CDN
+//https://www.npmjs.com/package/gerber-plotter (not the 5.0.0 tracespace one)
+const loadGerberPlotterLibrary = (): Promise<any> => {
+  if (gerberPlotterReady) return gerberPlotterReady;
+
+  gerberPlotterReady = new Promise((resolve, reject) => {
+    if ((window as any).gerberPlotter) {
+      resolve((window as any).gerberPlotter);
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = 'https://unpkg.com/gerber-plotter@^4.0.0/dist/gerber-plotter.min.js';
+    // script.src = "gerber-plotter.min.js"; // Local copy
+    script.async = true;
+
+    script.onload = () => {
+      if ((window as any).gerberPlotter) {
+        resolve((window as any).gerberPlotter);
+      } else {
+        reject(new Error("gerberPlotter not found on window"));
+      }
+    };
+
+    script.onerror = () =>
+      reject(new Error("Failed to load gerber-plotter script"));
+
+    document.body.appendChild(script);
+  });
+
+  return gerberPlotterReady;
+};
+
+
 // Return (filename -> text content) mapping for all files (of any type) in the zip
 const zipToFileTexts = async (file: File) => {
   const zip = new JSZip();
@@ -61,6 +98,7 @@ const zipToFileTexts = async (file: File) => {
 
 export interface Gerber {
   graphicObjects: any[];
+  plotterObjects: any[]; // Currently unused
   filename: string;
 }
 
@@ -71,19 +109,29 @@ export interface GerberSet {
 
 // Parse a single Gerber file's content
 const parseGerberContent = async (content: string, name: string) => {
+  // Parser turns Gerber file's text into a JSON abstract syntax tree (AST)
   const gerberParser = await loadGerberParserLibrary();
+  // Plotter turns the Gerber AST into graphic objects (e.g. shapes, pads) for rendering (some proprietary format?)
+  const gerberPlotter = await loadGerberPlotterLibrary();
+
   const parser = gerberParser();
+  const plotter = gerberPlotter();
 
   const parsedData: any[] = [];
+  const plottedData: any[] = [];
 
   parser.on("data", (data: any) => {
     parsedData.push(data);
   });
+  plotter.on("data", (data: any) => {
+    plottedData.push(data);
+  });
 
+  parser.pipe(plotter);
   parser.write(content);
   parser.end();
 
-  return { name, parsedData };
+  return { name, parsedData, plottedData };
 };
 
 // Any files that have gerber graphics objects inside
@@ -98,16 +146,19 @@ export const validGerberExtensions = [
   ".gto", // Gerber Top Silkscreen (Overlay)
   ".gbp", // Gerber Bottom Paste
   ".gtp", // Gerber Top Paste
-  ".gm1", // Mechanical Layer 1
-  ".gm2", // Mechanical Layer 2
-  // ".drl", // Drill file (Excellon format)
-  // ".xln", // Alternate drill file extension
-  ".gml", // Gerber Mechanical Layer
   ".gko", // Keep-out layer
-  // ".gpi", // Gerber Plot Information
   ".gbs", // Gerber Bottom Soldermask
   ".gts", // Gerber Top Soldermask
+
+  ".drl", // Drill file (Excellon format)
+  ".xln", // Alternate drill file extension
+  // ".gpi", // Gerber Plot Information
+
+  ".gm",
+  ".gml", // Gerber Mechanical Layer
 ];
+
+for (let i = 1; i < 100; i++) validGerberExtensions.push(`.gm${i}`);
 
 const isValidGerberFile = (fileName: string) => {
   return validGerberExtensions.some((ext) =>
@@ -154,6 +205,7 @@ export const handleGerberUpload = async (
         parsedGerbers.push({
           filename: result.name,
           graphicObjects: result.parsedData,
+          plotterObjects: result.plottedData,
         } as Gerber);
       }
     }
@@ -167,6 +219,7 @@ export const handleGerberUpload = async (
       parsedGerbers.push({
         filename: result.name,
         graphicObjects: result.parsedData,
+        plotterObjects: result.plottedData,
       } as Gerber);
     }
   } else {
