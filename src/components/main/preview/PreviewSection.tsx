@@ -1,5 +1,14 @@
 import { useEffect, useRef, useState } from "react";
-import { Alert, Box, Stack, Typography, Chip, Button } from "@mui/material";
+import {
+  Alert,
+  Box,
+  Stack,
+  Typography,
+  Chip,
+  Button,
+  ToggleButton,
+  ToggleButtonGroup,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import CustomDivider from "../CustomDivider";
 import FileUploadDropZone from "./FileUploadDropZone";
@@ -24,16 +33,28 @@ export default function PreviewSection() {
     "error" | "warning" | "info" | "success"
   >("error");
 
-  const [hasUploadedFile, setHasUploadedFile] = useState<boolean>(false);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+
+  const [layerViewMode, setLayerViewMode] = useState<boolean>(false);
 
   const handleUpload = (file: File | null) => {
     if (file) {
       // Set flag to show canvas
-      setHasUploadedFile(true);
+      setUploadedFile(file);
       // Store the file to process after canvas is mounted
       setPendingFile(file);
     }
+  };
+
+  // TODO: Just trigger the re-draw, rather than re-processing the whole file.
+  // But for now, this is simpler than storing canvas and gerberset state.
+  const handleViewModeChange = (value: string | null) => {
+    if (value) setLayerViewMode(value === "layer");
+
+    // Re-process the file to update the rendering
+    setPendingFile(uploadedFile);
+    processFile();
   };
 
   // Process the file once canvas is available
@@ -42,6 +63,7 @@ export default function PreviewSection() {
       handleGerberUpload(
         pendingFile,
         gerberCanvasRef.current,
+        !layerViewMode,
         setStatusMessage,
         setStatusSeverity,
         (sockets: GerberSocket[]) => {
@@ -54,10 +76,10 @@ export default function PreviewSection() {
 
   // Call processFile when canvas becomes available
   useEffect(() => {
-    if (hasUploadedFile && gerberCanvasRef.current && pendingFile) {
+    if (uploadedFile && gerberCanvasRef.current && pendingFile) {
       processFile();
     }
-  }, [hasUploadedFile, pendingFile]);
+  }, [uploadedFile, pendingFile]);
 
   const handleReset = () => {
     // Clear the canvas
@@ -72,7 +94,7 @@ export default function PreviewSection() {
     // Reset all state
     setGerberSocketsInfo([]);
     setStatusMessage(null);
-    setHasUploadedFile(false);
+    setUploadedFile(null);
     setPendingFile(null);
   };
 
@@ -81,7 +103,7 @@ export default function PreviewSection() {
       <CustomDivider name="Preview and verify GerberSockets" />
 
       {/* Show upload box when nothing was uploaded */}
-      {!hasUploadedFile && (
+      {!uploadedFile && (
         <Box>
           <Box sx={{ pb: 1, color: "text.secondary" }}>
             Upload Gerber files for a single module or a complete board exported
@@ -96,7 +118,7 @@ export default function PreviewSection() {
       )}
 
       {/* Show canvas when file has been uploaded */}
-      {hasUploadedFile && (
+      {uploadedFile && (
         <>
           <Stack
             direction="row"
@@ -106,6 +128,21 @@ export default function PreviewSection() {
             <Box sx={{ color: "text.secondary" }}>
               Render of the uploaded Gerber files with detected GerberSockets
             </Box>
+
+            {/* ToggleButton to swap between Layer and Board view */}
+            <ToggleButtonGroup
+              value={layerViewMode ? "layer" : "board"}
+              exclusive
+              onChange={(_, value) => {
+                handleViewModeChange(value);
+              }}
+              size="small"
+              sx={{ mr: 2 }}
+            >
+              <ToggleButton value="layer">Layer View</ToggleButton>
+              <ToggleButton value="board">Board View</ToggleButton>
+            </ToggleButtonGroup>
+
             <Button
               onClick={handleReset}
               startIcon={<CloseIcon />}
@@ -151,6 +188,7 @@ export default function PreviewSection() {
                     canvasX={socket.canvasX}
                     canvasY={socket.canvasY}
                     ascii={socket.ascii}
+                    brighter={!layerViewMode}
                   />
                 );
               })}

@@ -6,9 +6,10 @@ export interface GerberSocketChipProps {
   canvasX: number;
   canvasY: number;
   ascii?: string;
+  brighter?: boolean;
 }
 
-export const GerberSocketChip = ({ canvasX, canvasY, ascii }: GerberSocketChipProps) => {
+export const GerberSocketChip = ({ canvasX, canvasY, ascii, brighter }: GerberSocketChipProps) => {
   const size = 32 / canvasDPI;
 
   return (
@@ -58,7 +59,7 @@ export const GerberSocketChip = ({ canvasX, canvasY, ascii }: GerberSocketChipPr
               width: "100%",
               height: "100%",
               borderRadius: "50%",
-              backgroundColor: ascii ? "primary.main" : "warning.main",
+              backgroundColor: brighter ? "lime" : ascii ? "primary.main" : "warning.main",
               opacity: 0.5,
               // pulse animates transform + opacity so it visually pulses
               animation: "pulse 2000ms infinite linear",
@@ -69,7 +70,7 @@ export const GerberSocketChip = ({ canvasX, canvasY, ascii }: GerberSocketChipPr
               // keyframes for the pulse
               "@keyframes pulse": {
                 "0%": { transform: "scale(1)", opacity: 0.5 },
-                "50%": { transform: "scale(1.12)", opacity: 0.75 },
+                "50%": { transform: "scale(1.2)", opacity: 0.75 },
                 "100%": { transform: "scale(1)", opacity: 0.5 },
               },
             }}

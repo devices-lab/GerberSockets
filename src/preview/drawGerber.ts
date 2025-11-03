@@ -105,7 +105,7 @@ const drawGerberLayer = (
 const assignCanvasPosToSockets = (sockets: GerberSocket[]) => {
   for (let i = 0; i < sockets.length; i++) {
     const socket = sockets[i];
-    
+
     sockets[i].canvasX = offsetX + socket.x * scale;
     sockets[i].canvasY = offsetY - socket.y * scale;
   }
@@ -113,7 +113,7 @@ const assignCanvasPosToSockets = (sockets: GerberSocket[]) => {
 
 const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw("Failed to get canvas 2D context.");
+  if (!ctx) throw ("Failed to get canvas 2D context.");
 
   const px = offsetX + socket.x * scale;
   const py = offsetY - socket.y * scale;
@@ -143,7 +143,39 @@ const drawGerberSocket = (socket: GerberSocket, canvas: HTMLCanvasElement) => {
   // ctx.fillText(socket.ascii, px + 20, py);
 };
 
-export const drawGerberCanvas = (
+export const drawStackup = (
+  stackup: any,
+  canvas: HTMLCanvasElement
+) => {
+  // Draw stackup.top.svg with the correct scale and offset
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw ("Failed to get canvas 2D context.");
+
+  const svgData = stackup.top.svg;
+  const img = new Image();
+  const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+
+  img.onload = () => {
+    // Clear canvas
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw SVG centered with scale
+    const svgScaleDiff = 3.8; // TODO: Figure out / eliminate this magic number
+    const imgWidth = img.width / svgScaleDiff * scale;
+    const imgHeight = img.height / svgScaleDiff * scale;
+    const drawX = offsetX - imgWidth / 2;
+    const drawY = offsetY - imgHeight / 2;
+
+    ctx.drawImage(img, drawX, drawY, imgWidth, imgHeight);
+
+    URL.revokeObjectURL(url);
+
+  };
+  img.src = url;
+};
+
+export const drawGerber = (
   gerberSet: GerberSet,
   sockets: GerberSocket[],
   canvas: HTMLCanvasElement
@@ -151,19 +183,19 @@ export const drawGerberCanvas = (
   console.log("Drawing Gerber Layers:", gerberSet.gerbers);
 
   // Check if there's an edge cuts layer
-  const edgeCutsLayer = gerberSet.gerbers.find(gerber => 
-    gerber.filename.toLowerCase().includes('edge') && 
+  const edgeCutsLayer = gerberSet.gerbers.find(gerber =>
+    gerber.filename.toLowerCase().includes('edge') &&
     gerber.filename.toLowerCase().includes('cuts') &&
     gerber.graphicObjects.length > 4
   );
-  
+
   // Find bounds of all gerber layers
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   let avgX = 0, avgY = 0, pointCount = 0;
 
   for (const gerber of gerberSet.gerbers) {
     // If edge cuts layer exists, use only it when calculating bounds
-    if (edgeCutsLayer && gerber !== edgeCutsLayer) continue; 
+    if (edgeCutsLayer && gerber !== edgeCutsLayer) continue;
 
     for (const item of gerber.graphicObjects) {
       if (item.type === "op") {
@@ -204,7 +236,7 @@ export const drawGerberCanvas = (
   }
 
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw("Failed to get canvas 2D context.");
+  if (!ctx) throw ("Failed to get canvas 2D context.");
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 

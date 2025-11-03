@@ -1,11 +1,12 @@
 import type { Dispatch, SetStateAction } from "react";
 import JSZip from "jszip";
-import { drawGerberCanvas } from "./drawGerber";
+import { drawGerber, drawStackup } from "./drawGerber";
 import { parseSockets } from "./parseSockets";
 import type { GerberSocket } from "./parseSockets";
 import { clearCanvas } from "./drawGerber";
 
 let gerberParserReady: Promise<any> | null = null;
+let pcbStackupReady: Promise<any> | null = null;
 
 // Dynamically load the gerber-parser script from CDN
 const loadGerberParserLibrary = (): Promise<any> => {
@@ -39,6 +40,39 @@ const loadGerberParserLibrary = (): Promise<any> => {
   return gerberParserReady;
 };
 
+// Dynamically load the pcb-stackup script from CDN
+const loadPcbStackupLibrary = (): Promise<any> => {
+  if (pcbStackupReady) return pcbStackupReady;
+
+  pcbStackupReady = new Promise((resolve, reject) => {
+    if ((window as any).pcbStackup) {
+      resolve((window as any).pcbStackup);
+      return;
+    }
+
+    const script = document.createElement("script");
+    // script.src = "https://unpkg.com/pcb-stackup@^4.0.0/dist/pcb-stackup.min.js";
+    script.src = "pcb-stackup.min.js"; // Local copy
+    script.async = true;
+
+    script.onload = () => {
+      if ((window as any).pcbStackup) {
+        resolve((window as any).pcbStackup);
+      } else {
+        reject(new Error("pcbStackup not found on window"));
+      }
+    };
+
+    script.onerror = () =>
+      reject(new Error("Failed to load pcb-stackup script"));
+
+    document.body.appendChild(script);
+  });
+
+  return pcbStackupReady;
+};
+
+
 // Return (filename -> text content) mapping for all files (of any type) in the zip
 const zipToFileTexts = async (file: File) => {
   const zip = new JSZip();
@@ -67,6 +101,7 @@ export interface Gerber {
 export interface GerberSet {
   gerbers: Gerber[];
   zipFilename: string | null;
+  stackup: any | null;
 }
 
 // Parse a single Gerber file's content
@@ -100,13 +135,15 @@ export const validGerberExtensions = [
   ".gtp", // Gerber Top Paste
   ".gm1", // Mechanical Layer 1
   ".gm2", // Mechanical Layer 2
-  // ".drl", // Drill file (Excellon format)
-  // ".xln", // Alternate drill file extension
   ".gml", // Gerber Mechanical Layer
   ".gko", // Keep-out layer
-  // ".gpi", // Gerber Plot Information
   ".gbs", // Gerber Bottom Soldermask
   ".gts", // Gerber Top Soldermask
+
+  ".drl", // Drill file (Excellon format)
+  ".xln", // Alternate drill file extension
+
+  // ".gpi", // Gerber Plot Information
 ];
 
 const isValidGerberFile = (fileName: string) => {
@@ -123,6 +160,7 @@ const isValidZipFile = (fileName: string) => {
 export const handleGerberUpload = async (
   file: File,
   canvas: HTMLCanvasElement,
+  showStackup: boolean,
   setStatusMessage: Dispatch<SetStateAction<string | null>>,
   setStatusSeverity: Dispatch<
     SetStateAction<"error" | "warning" | "info" | "success">
@@ -134,6 +172,7 @@ export const handleGerberUpload = async (
   const gerberSet: GerberSet = {
     zipFilename: null,
     gerbers: [],
+    stackup: null,
   };
 
   // Clear previous status
@@ -142,13 +181,22 @@ export const handleGerberUpload = async (
   onSocketsParsed([]);
   clearCanvas(canvas);
 
+  const stackupLayers = [];
+
   // Zip upload
   if (isValidZipFile(file.name)) {
     gerberSet.zipFilename = file.name;
 
     const files = await zipToFileTexts(file);
+
     for (const gbrFile of files) {
       if (isValidGerberFile(gbrFile.name)) {
+        // Add to stackup layers
+        stackupLayers.push({
+          filename: gbrFile.name,
+          gerber: gbrFile.content,
+        });
+
         // The text of a file in the zip
         const result = await parseGerberContent(gbrFile.content, gbrFile.name);
         parsedGerbers.push({
@@ -162,8 +210,14 @@ export const handleGerberUpload = async (
 
     if (isValidGerberFile(file.name)) {
       const content = await file.text();
-      const result = await parseGerberContent(content, file.name);
 
+      // Add to stackup layers
+      stackupLayers.push({
+        filename: file.name,
+        gerber: content
+      });
+
+      const result = await parseGerberContent(content, file.name);
       parsedGerbers.push({
         filename: result.name,
         graphicObjects: result.parsedData,
@@ -192,6 +246,14 @@ export const handleGerberUpload = async (
     return;
   }
 
+  // Generate PCB stackup (render) from the Gerber layers
+  const pcbStackup = await loadPcbStackupLibrary();
+  const stackupOptions = {
+    // useOutline: false,
+    outlineGapFill: 0.011,
+  };
+  gerberSet.stackup = await pcbStackup(stackupLayers, stackupOptions); // TODO: Does the order of the layers passed matter?
+
   const sockets: GerberSocket[] = parseSockets(
     gerberSet,
     setStatusMessage,
@@ -199,9 +261,12 @@ export const handleGerberUpload = async (
   );
 
   // Draw the gerber onto the canvas, and store socket canvas positions in sockets
-  drawGerberCanvas(gerberSet, sockets, canvas);
+  drawGerber(gerberSet, sockets, canvas);
+  if (showStackup) drawStackup(gerberSet.stackup, canvas);
 
   // Return socket info for the UI (including canvas positions)
   console.log("Parsed GerberSockets:", sockets);
   onSocketsParsed(sockets);
+
+  console.log("Completed Gerber upload handling.", gerberSet);
 };
