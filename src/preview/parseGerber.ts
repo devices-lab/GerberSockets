@@ -251,7 +251,20 @@ export const handleGerberUpload = async (
   const stackupOptions = {
     // useOutline: false,
     outlineGapFill: 0.011,
+    color: {
+      sm: 'rgba(4, 99, 7, 0.75)',
+
+      // Default colors:
+      // fr4: '#666',
+      // cu: '#ccc',
+      // cf: '#c93',
+      // sm: 'rgba(0, 66, 0, 0.75)',
+      // ss: '#fff',
+      // sp: '#999',
+      // out: '#000',
+    }
   };
+  // NOTE: API reference: https://github.com/tracespace/tracespace/blob/v4.2.8/packages/pcb-stackup/API.md
   gerberSet.stackup = await pcbStackup(stackupLayers, stackupOptions); // TODO: Does the order of the layers passed matter?
 
   const sockets: GerberSocket[] = parseSockets(
