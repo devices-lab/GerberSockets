@@ -139,6 +139,8 @@ export const validGerberExtensions = [
   ".gko", // Keep-out layer
   ".gbs", // Gerber Bottom Soldermask
   ".gts", // Gerber Top Soldermask
+  ".g1",  // Internal Layer 1
+  ".g2",  // Internal Layer 2
 
   ".drl", // Drill file (Excellon format)
   ".xln", // Alternate drill file extension

@@ -59,7 +59,7 @@ export const GerberSocketChip = ({ canvasX, canvasY, ascii, brighter }: GerberSo
               width: "100%",
               height: "100%",
               borderRadius: "50%",
-              backgroundColor: brighter ? "lime" : ascii ? "primary.main" : "warning.main",
+              backgroundColor: ascii ? (brighter ? "lime" : "primary.main") : "warning.main",
               opacity: 0.5,
               // pulse animates transform + opacity so it visually pulses
               animation: "pulse 2000ms infinite linear",

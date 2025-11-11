@@ -161,16 +161,15 @@ export const drawStackup = (
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Draw SVG centered with scale
-    const svgScaleDiff = 3.8; // TODO: Figure out / eliminate this magic number
-    const imgWidth = img.width / svgScaleDiff * scale;
-    const imgHeight = img.height / svgScaleDiff * scale;
+    const imgWidth = stackup.top.width * scale;
+    const imgHeight = stackup.top.height * scale;
+    // TODO: Fix the drawX and drawY when offsetX/Y are not zero
     const drawX = offsetX - imgWidth / 2;
     const drawY = offsetY - imgHeight / 2;
 
     ctx.drawImage(img, drawX, drawY, imgWidth, imgHeight);
 
     URL.revokeObjectURL(url);
-
   };
   img.src = url;
 };
