@@ -2,13 +2,11 @@
 
 ![GerberSockets webpage](./image.png)
 
-Easily generate ASCII GerberSockets for your electronics projects using this web tool. Currently, symbol and footprint generation is supported for KiCad. Future updates may include support for Altium.
+Easily generate ASCII GerberSockets for your electronics projects using this web tool. Currently, symbol and footprint generation is supported for KiCad only. Future updates may include support for Altium.
 
 ## Why use this tool?
 
-Previously, GerberSockets required you to manually map each net to a specific circle diameter, which was tedious and error-prone. This tool simplifies the process by encoding net names directly in ASCII using multiple circles for each socket—no manual mapping needed.
-
-Learn more about the encoding method in the [How ASCII GerberSockets Work](#how-ascii-gerbersockets-work) section.
+Previously, GerberSockets required you to manually map each net to a specific circle diameter. This tool simplifies the process by encoding net names directly in ASCII using multiple circles for each socket.
 
 ## Features
 
@@ -41,9 +39,11 @@ For each character at position _i_ (1–99) with ASCII code _c_ (0–127), the d
 
 ### Example
 
-The net name `GND` is encoded as: - 0: `0.00999` (identifier) - 1: `0.01071` (`G`) - 2: `0.02078` (`N`) - 3: `0.03068` (`D`)
-
-This method is deterministic, self-describing, and easy to generate or parse. It avoids reliance on text rendering and ensures the geometry itself contains all necessary information.
+The net name GND is encoded as: 
+- 1st circle: `0.00999` (identifier) 
+- 2nd circle: `0.01071` (G)
+- 3rd circle: `0.02078` (N)
+- 4th circle: `0.03068` (D)
 
 ## Development
 
