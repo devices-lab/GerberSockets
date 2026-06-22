@@ -106,10 +106,18 @@ export default function PreviewSection() {
       {!uploadedFile && (
         <Box>
           <Box sx={{ pb: 1, color: "text.secondary" }}>
-            Upload Gerber files for a single module or a complete board exported
-            from MakeDevice
+            Upload Gerber files for a single "Gerber snippet" or a complete PCB with GerberSocket annotations
           </Box>
-
+          <Box sx={{ pb: 1, color: "text.secondary" }}>
+            Please note:
+            <Box component="ul" sx={{ pl: 2, mt: 0.5, mb: 0 }}>
+              <li>
+                The Gerber file with GerberSockets must be called{" "}
+                <code>GerberSockets.gbr</code>
+              </li>
+              <li>To pass grid validation, the sockets must be on a 0.25 mm grid</li>
+            </Box>
+          </Box>
           <FileUploadDropZone
             onFileDrop={handleUpload}
             accept={".zip," + validGerberExtensions.filter((ext) => ext !== ".zip").join(",")} // Putting .zip first for clarity
